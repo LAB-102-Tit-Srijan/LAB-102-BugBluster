@@ -18,6 +18,27 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "your_app_id",
 };
 
+const placeholderValues = new Set([
+  "",
+  "your_api_key",
+  "your_auth_domain",
+  "your_project_id",
+  "your_storage_bucket",
+  "your_messaging_sender_id",
+  "your_app_id",
+]);
+
+export const isFirebaseConfigured =
+  !placeholderValues.has(firebaseConfig.apiKey) &&
+  !placeholderValues.has(firebaseConfig.authDomain) &&
+  !placeholderValues.has(firebaseConfig.projectId) &&
+  !placeholderValues.has(firebaseConfig.storageBucket) &&
+  !placeholderValues.has(firebaseConfig.messagingSenderId) &&
+  !placeholderValues.has(firebaseConfig.appId);
+
+export const firebaseSetupMessage =
+  "Firebase is not configured. Add all VITE_FIREBASE_* values in .env, then restart npm run dev.";
+
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
