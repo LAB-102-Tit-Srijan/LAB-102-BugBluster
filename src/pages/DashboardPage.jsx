@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PropertyCard from "../components/PropertyCard";
 import MatchCard from "../components/MatchCard";
+import SharedPods from "../components/SharedPods";
 import { useAuth } from "../context/AuthContext";
 import { candidates } from "../data/candidates";
 import { properties } from "../data/properties";
@@ -217,6 +218,13 @@ export default function DashboardPage() {
                         {action.label}
                       </Link>
                     ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-black/20">
+                  <h2 className="text-xl font-bold text-white">Find Your Community</h2>
+                  <div className="mt-4">
+                    <SharedPods />
                   </div>
                 </div>
 

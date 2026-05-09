@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-export default function PropertyCard({ property, theme = "dark" }) {
+export default function PropertyCard({ property, theme = "dark", communityBadge = "" }) {
   const dark = theme === "dark";
   const cardClassName = "group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-indigo-500/40";
   const rent = property.rent ?? property.price ?? 0;
@@ -83,6 +83,15 @@ export default function PropertyCard({ property, theme = "dark" }) {
             Scam Risk: {property.scamRisk || "Low"}
           </span>
         </div>
+
+        {communityBadge && (
+          <div>
+            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-[#1C2128] px-3 py-1 text-xs font-semibold text-amber-300">
+              {communityBadge}
+            </span>
+          </div>
+        )}
+
         <Link to={`/property/${property.id}`} className="block rounded-xl bg-indigo-600 py-3 text-center font-semibold text-white transition hover:bg-indigo-500">
           View Details
         </Link>
