@@ -15,39 +15,39 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="border-b border-slate-800 bg-[#0b1220]/95 shadow-sm backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="text-2xl font-bold text-indigo-600">
+          <Link to="/" className="text-2xl font-black tracking-tight text-indigo-400">
             Habiwise
           </Link>
 
           <div className="flex gap-6 items-center">
             {currentUser ? (
               <>
-                <Link to="/listings" className="text-gray-700 hover:text-indigo-600 font-medium">
+                <Link to="/listings" className="font-medium text-slate-300 hover:text-indigo-300">
                   Listings
                 </Link>
-                <Link to="/roommate-match" className="text-gray-700 hover:text-indigo-600 font-medium">
+                <Link to="/roommate-match" className="font-medium text-slate-300 hover:text-indigo-300">
                   Roommates
                 </Link>
-                <Link to="/dashboard" className="text-gray-700 hover:text-indigo-600 font-medium">
+                <Link to="/dashboard" className="font-medium text-slate-300 hover:text-indigo-300">
                   Dashboard
                 </Link>
-                <span className="text-gray-700">{currentUser.email}</span>
+                <span className="text-slate-400">{currentUser.email}</span>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium"
+                  className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-700 hover:text-indigo-600 font-medium">
+                <Link to="/login" className="font-medium text-slate-300 hover:text-indigo-300">
                   Login
                 </Link>
-                <Link to="/signup" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium">
+                <Link to="/signup" className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500">
                   Sign Up
                 </Link>
               </>

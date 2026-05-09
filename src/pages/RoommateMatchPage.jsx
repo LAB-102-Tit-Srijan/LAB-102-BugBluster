@@ -23,19 +23,19 @@ export default function RoommateMatchPage() {
   return (
     <>
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Find Your Roommate</h1>
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <h1 className="mb-8 text-3xl font-black text-white">Find Your Roommate</h1>
 
-        <div className="max-w-2xl bg-white rounded-lg shadow p-8">
+        <div className="max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl shadow-black/20">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Budget Range</label>
               <select
                 name="budget"
                 value={formData.budget}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
               >
                 <option value="">Select budget</option>
                 <option value="0-10000">Under Rs10,000</option>
@@ -45,13 +45,13 @@ export default function RoommateMatchPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+              <label className="mb-2 block text-sm font-medium text-slate-300">City</label>
               <select
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
               >
                 <option value="">Select city</option>
                 <option value="Bangalore">Bangalore</option>
@@ -61,13 +61,13 @@ export default function RoommateMatchPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Role</label>
               <select
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
               >
                 <option value="">Select role</option>
                 <option value="Student">Student</option>
@@ -75,10 +75,7 @@ export default function RoommateMatchPage() {
               </select>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700"
-            >
+            <button type="submit" className="w-full rounded-lg bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500">
               Find Matches
             </button>
           </form>

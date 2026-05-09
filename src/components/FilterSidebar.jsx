@@ -1,14 +1,14 @@
 export default function FilterSidebar({ onFilterChange }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-black/20">
+      <h3 className="mb-4 text-lg font-semibold text-white">Filters</h3>
 
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
+          <label className="mb-2 block text-sm font-medium text-slate-300">Budget Range</label>
           <select
             onChange={(e) => onFilterChange("budget", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
           >
             <option>All</option>
             <option>Under 10k</option>
@@ -18,10 +18,10 @@ export default function FilterSidebar({ onFilterChange }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+          <label className="mb-2 block text-sm font-medium text-slate-300">City</label>
           <select
             onChange={(e) => onFilterChange("city", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
           >
             <option>All</option>
             <option>Bangalore</option>
@@ -31,10 +31,10 @@ export default function FilterSidebar({ onFilterChange }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+          <label className="mb-2 block text-sm font-medium text-slate-300">Role</label>
           <select
             onChange={(e) => onFilterChange("role", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
           >
             <option>All</option>
             <option>Student</option>
