@@ -1,0 +1,32 @@
+export const candidates = [
+  {
+    id: 1,
+    name: "Priya Singh",
+    age: 22,
+    role: "Student",
+    budget: 12000,
+    city: "Bangalore",
+    occupation: "Computer Science Student",
+    image: "https://via.placeholder.com/150?text=Priya",
+  },
+  {
+    id: 2,
+    name: "Rajesh Kumar",
+    age: 28,
+    role: "Professional",
+    budget: 20000,
+    city: "Mumbai",
+    occupation: "Software Engineer",
+    image: "https://via.placeholder.com/150?text=Rajesh",
+  },
+  {
+    id: 3,
+    name: "Ananya Patel",
+    age: 24,
+    role: "Student",
+    budget: 10000,
+    city: "Delhi",
+    occupation: "MBA Student",
+    image: "https://via.placeholder.com/150?text=Ananya",
+  },
+];

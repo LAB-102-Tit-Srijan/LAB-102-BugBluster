@@ -1,0 +1,32 @@
+export const properties = [
+  {
+    id: 1,
+    title: "Modern Studio Near Campus",
+    price: 15000,
+    location: "Bangalore, India",
+    image: "https://via.placeholder.com/300x200?text=Studio+Near+Campus",
+    beds: 1,
+    baths: 1,
+    amenities: ["WiFi", "AC", "Kitchen"],
+  },
+  {
+    id: 2,
+    title: "Shared Apartment with Workspace",
+    price: 12000,
+    location: "Mumbai, India",
+    image: "https://via.placeholder.com/300x200?text=Shared+Apartment",
+    beds: 2,
+    baths: 1,
+    amenities: ["WiFi", "Workspace", "Laundry"],
+  },
+  {
+    id: 3,
+    title: "Budget Room in Quiet Neighborhood",
+    price: 8000,
+    location: "Delhi, India",
+    image: "https://via.placeholder.com/300x200?text=Budget+Room",
+    beds: 1,
+    baths: 1,
+    amenities: ["WiFi", "Fan", "Shared Kitchen"],
+  },
+];
