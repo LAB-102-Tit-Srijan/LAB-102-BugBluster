@@ -19,6 +19,7 @@ const defaultFilters = {
   selectedTypes: [],
   sortBy: "",
   stayDuration: "",
+  depositPreference: "all",
   people: {
     sameCollegeMatch: false,
     collegeName: "",
@@ -149,6 +150,12 @@ export default function ListingsPage() {
         ((appliedFilters.stayDuration === "Short Term" || appliedFilters.stayDuration === "Very Short") &&
           property.shortTermFriendly === true);
 
+      const matchesDepositPreference =
+        appliedFilters.depositPreference === "all" ||
+        (appliedFilters.depositPreference === "zero" && property.zeroDepositAvailable) ||
+        (appliedFilters.depositPreference === "half" && (property.zeroDepositAvailable || property.halfDepositAvailable)) ||
+        (appliedFilters.depositPreference === "standard" && !property.zeroDepositAvailable && !property.halfDepositAvailable);
+
       return (
         matchesSearch &&
         matchesCity &&
@@ -158,7 +165,8 @@ export default function ListingsPage() {
         matchesTypes &&
         matchesStudentPeople &&
         matchesProfessionalPeople &&
-        matchesStayDuration
+        matchesStayDuration &&
+        matchesDepositPreference
       );
     });
 
@@ -558,6 +566,47 @@ export default function ListingsPage() {
             );
           })}
         </div>
+      </div>
+
+      <div className="my-3 border-t border-[#30363D]" />
+
+      <div>
+        <p className="mb-1.5 text-[11px] uppercase tracking-[0.2em] text-amber-300/80">💰 Deposit Preference</p>
+        <div className="space-y-1.5">
+          {[
+            { value: "all", label: "All Properties" },
+            { value: "zero", label: "Zero Deposit Only ⚡" },
+            { value: "half", label: "50% or less Deposit 💫" },
+            { value: "standard", label: "Standard Listings" },
+          ].map((option) => {
+            const selected = draftFilters.depositPreference === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setDraftFilters((current) => ({ ...current, depositPreference: option.value }))}
+                className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-all duration-300 ease-out ${
+                  selected
+                    ? "border-l-[3px] border-amber-400 bg-amber-500/10 text-amber-200"
+                    : "border-l-[3px] border-transparent text-slate-300 hover:bg-slate-800/70 hover:translate-x-0.5"
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate whitespace-nowrap pr-1 text-[13px] leading-snug">{option.label}</span>
+                <span
+                  className={`h-4 w-4 shrink-0 rounded-full border ${
+                    selected ? "border-amber-400 bg-amber-400" : "border-slate-500"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {draftFilters.depositPreference === "zero" && (
+          <div className="mt-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+            Available for Elite members (Score 71+)
+          </div>
+        )}
       </div>
 
       <div className="my-3 border-t border-[#30363D]" />

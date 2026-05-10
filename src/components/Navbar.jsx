@@ -21,7 +21,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-3">
           <Link to="/" className="text-2xl font-black tracking-tight text-indigo-400">
-            Habiwise
+            HabiWise
           </Link>
 
           <div className="hidden items-center gap-6 md:flex">

@@ -4,12 +4,16 @@ import Navbar from "../components/Navbar";
 import { candidates } from "../data/candidates";
 import { getTopMatches } from "../utils/matchingLogic";
 import SharedPods from "../components/SharedPods";
+import { FEE_CONFIG } from "../utils/feeCalculator";
 
 export default function RoommateResultsPage() {
   const location = useLocation();
   const userPrefs = location.state || {};
   const [isCalculating, setIsCalculating] = useState(true);
   const [matches, setMatches] = useState([]);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [showFeeModal, setShowFeeModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     // Calculate matches after 2 seconds to show the animation
@@ -61,7 +65,15 @@ export default function RoommateResultsPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               {matches.length > 0 ? (
                 matches.map((candidate, idx) => (
-                  <MatchCard key={candidate.id} candidate={candidate} index={idx} />
+                  <MatchCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    index={idx}
+                    onConnect={() => {
+                      setSelectedCandidate(candidate);
+                      setShowFeeModal(true);
+                    }}
+                  />
                 ))
               ) : (
                 <div className="col-span-full py-12 text-center">
@@ -78,6 +90,71 @@ export default function RoommateResultsPage() {
           </div>
         </div>
       </div>
+
+      {showFeeModal && selectedCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-amber-500/25 bg-[#0D1117] p-6 text-slate-100 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Roommate Match</p>
+            <h3 className="mt-3 text-2xl font-black text-white">🧬 Connect with {selectedCandidate.name}</h3>
+            <p className="mt-2 text-sm text-slate-400">Compatibility: {selectedCandidate.compatibility}%</p>
+
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-300">
+              <div className="flex items-center justify-between">
+                <span>Roommate Match Fee</span>
+                <span className="font-black text-amber-300">₹{FEE_CONFIG.roommateMatch}</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">(One-time, non-refundable)</p>
+            </div>
+
+            <div className="mt-5 space-y-2 text-sm text-slate-300">
+              <p>✅ Direct contact details</p>
+              <p>✅ Verified profile access</p>
+              <p>✅ Chat unlocked</p>
+              <p>✅ 30-day match guarantee</p>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFeeModal(false);
+                  setShowSuccessModal(true);
+                }}
+                className="flex-1 rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
+              >
+                Connect for ₹{FEE_CONFIG.roommateMatch}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFeeModal(false)}
+                className="text-sm font-semibold text-slate-400 transition hover:text-slate-200"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && selectedCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-emerald-500/25 bg-[#0D1117] p-6 text-slate-100 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.24em] text-emerald-300/80">Success</p>
+            <h3 className="mt-3 text-2xl font-black text-white">✅ Connected!</h3>
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-300">
+              <p>{selectedCandidate.name}&apos;s contact shared.</p>
+              <p className="mt-2">HabiWise earned: ₹{FEE_CONFIG.roommateMatch}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSuccessModal(false)}
+              className="mt-5 w-full rounded-xl bg-emerald-500 px-4 py-3 font-black text-black transition hover:bg-emerald-400"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes slideX {
@@ -96,7 +173,7 @@ export default function RoommateResultsPage() {
 /**
  * MatchCard Component with Animated Compatibility
  */
-function MatchCard({ candidate, index }) {
+function MatchCard({ candidate, index, onConnect }) {
   const [displayedCompatibility, setDisplayedCompatibility] = useState(0);
 
   // Animate the compatibility percentage counting up
@@ -229,7 +306,11 @@ function MatchCard({ candidate, index }) {
       </div>
 
       {/* Connect Button */}
-      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2 font-black text-black transition-all duration-300 ease-out hover:-translate-y-0.5 hover:from-amber-300 hover:to-amber-400">
+      <button
+        type="button"
+        onClick={onConnect}
+        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2 font-black text-black transition-all duration-300 ease-out hover:-translate-y-0.5 hover:from-amber-300 hover:to-amber-400"
+      >
         💬 Connect
       </button>
     </div>

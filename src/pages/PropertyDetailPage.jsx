@@ -2,6 +2,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import { properties } from "../data/properties";
+import { useAuth } from "../context/AuthContext";
+import { calculateTrustScore, getTrustTier } from "../utils/trustScore";
+import { calculateBookingFee, calculateDepositFee } from "../utils/feeCalculator";
 
 const AmenityIcons = {
   WiFi: "📶",
@@ -21,9 +24,21 @@ const AmenityIcons = {
 export default function PropertyDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const property = properties.find((p) => p.id === parseInt(id));
   const [mainImageIdx, setMainImageIdx] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [showReserveModal, setShowReserveModal] = useState(false);
+
+  const trustScore = currentUser?.trustScore ?? calculateTrustScore(currentUser || {});
+  const trustTier = getTrustTier(trustScore);
+  const bookingFee = calculateBookingFee(property.rent);
+  const depositFee = calculateDepositFee(property.securityDeposit);
+  const eliteDiscountAmount = trustTier.key === "elite" ? Math.round(bookingFee.platformFee * 0.2) : 0;
+  const totalPayable = bookingFee.rent + bookingFee.platformFee - eliteDiscountAmount + depositFee.handlingFee;
+  const traditionalBrokerLow = property.rent;
+  const traditionalBrokerHigh = property.securityDeposit;
+  const estimatedSavings = Math.max(traditionalBrokerHigh - totalPayable, 0);
 
   if (!property) {
     return (
@@ -213,8 +228,90 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* Right: Owner Card & CTA */}
+              {/* Booking Summary */}
             <div className="space-y-6">
+              <div className="rounded-2xl border border-amber-500/25 bg-[#0D1117] p-6 shadow-xl shadow-black/30">
+                <div className="mb-5 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Booking Summary</p>
+                    <h3 className="mt-2 text-2xl font-black text-white">💳 Booking Summary</h3>
+                  </div>
+                  <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-300">
+                    No Broker Fee. Ever.
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>Monthly Rent</span>
+                    <span className="font-semibold text-white">₹{bookingFee.rent.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>Security Deposit</span>
+                    <span className="font-semibold text-white">₹{property.securityDeposit.toLocaleString()}</span>
+                  </div>
+                  <div className="h-px bg-slate-800" />
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>Platform Fee (5%)</span>
+                    <span className="font-semibold text-amber-300">₹{bookingFee.platformFee.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>Deposit Handling (3%)</span>
+                    <span className="font-semibold text-amber-300">₹{depositFee.handlingFee.toLocaleString()}</span>
+                  </div>
+                  {trustTier.key === "elite" ? (
+                    <>
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span>Elite Discount (20%)</span>
+                        <span className="font-semibold text-emerald-300">-₹{eliteDiscountAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-amber-200">
+                        <span className="font-semibold">You Pay</span>
+                        <span className="font-black">₹{totalPayable.toLocaleString()}</span>
+                      </div>
+                      <p className="text-xs font-semibold text-amber-300">🥇 Elite Member Benefit</p>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+                      <span className="font-semibold">First Month Total</span>
+                      <span className="font-black">₹{totalPayable.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-300">
+                  <p className="font-semibold text-amber-200">🏷 No Broker Fee. Ever.</p>
+                  <p className="mt-2 text-slate-400">
+                    Traditional broker: ₹{traditionalBrokerLow.toLocaleString()} - ₹{traditionalBrokerHigh.toLocaleString()}
+                  </p>
+                  <p className="mt-2 font-semibold text-emerald-300">You save: ₹{estimatedSavings.toLocaleString()} 💚</p>
+                </div>
+
+                <div className="mt-5 grid gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/roommate-match")}
+                    className="rounded-xl border border-amber-500/30 bg-transparent px-4 py-3 font-black text-amber-300 transition hover:bg-amber-500/10"
+                  >
+                    📅 Book Visit - Free
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReserveModal(true)}
+                    className="rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
+                  >
+                    🔒 Reserve Room - ₹{totalPayable.toLocaleString()}
+                  </button>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-400">
+                  <span>Higher Trust Score = Lower fees</span>
+                  <button type="button" onClick={() => navigate("/dashboard")} className="font-semibold text-amber-300 hover:text-amber-200">
+                    View Your Score →
+                  </button>
+                </div>
+              </div>
+
               {/* Owner Card */}
               <div className="rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-xl">
                 <div className="text-center mb-6">
@@ -255,6 +352,26 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      {showReserveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-3xl border border-amber-500/25 bg-[#0D1117] p-6 text-slate-100 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Success</p>
+            <h3 className="mt-3 text-2xl font-black text-white">🎉 Room Reserved!</h3>
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-300">
+              <p>HabiWise Fee: ₹{bookingFee.platformFee.toLocaleString()}</p>
+              <p className="mt-2">Booking confirmed - owner will contact you in 24hrs</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowReserveModal(false)}
+              className="mt-5 w-full rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

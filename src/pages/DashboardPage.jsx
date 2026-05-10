@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PropertyCard from "../components/PropertyCard";
 import MatchCard from "../components/MatchCard";
@@ -6,6 +6,7 @@ import SharedPods from "../components/SharedPods";
 import { useAuth } from "../context/AuthContext";
 import { candidates } from "../data/candidates";
 import { properties } from "../data/properties";
+import { calculateTrustScore, getTrustImprovementItems, getTrustTier } from "../utils/trustScore";
 
 const sidebarLinks = [
   { icon: "🏠", label: "Dashboard", href: "/dashboard" },
@@ -45,6 +46,9 @@ const statCards = [
 export default function DashboardPage() {
   const { currentUser, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showTrustHelp, setShowTrustHelp] = useState(false);
+  const [toast, setToast] = useState("");
+  const [impactProgress, setImpactProgress] = useState(0);
 
   const localProfile = useMemo(() => {
     if (typeof window === "undefined") {
@@ -63,6 +67,41 @@ export default function DashboardPage() {
   const normalizedRole = (currentUser?.role || localProfile.role || "Student").toLowerCase();
   const roleLabel = normalizedRole.includes("professional") ? "Professional" : "Student";
   const isProfessional = roleLabel === "Professional";
+  const trustSource = { ...localProfile, ...currentUser };
+  const trustScore = currentUser?.trustScore ?? calculateTrustScore(trustSource);
+  const trustTier = getTrustTier(trustScore);
+  const trustItems = getTrustImprovementItems(trustSource);
+  const verifiedElite = trustTier.key === "elite";
+
+  useEffect(() => {
+    const startTime = performance.now();
+    let animationFrameId = 0;
+
+    const animate = (timestamp) => {
+      const elapsed = timestamp - startTime;
+      const nextProgress = Math.min(elapsed / 1500, 1);
+      setImpactProgress(nextProgress);
+
+      if (nextProgress < 1) {
+        animationFrameId = window.requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrameId = window.requestAnimationFrame(animate);
+
+    return () => window.cancelAnimationFrame(animationFrameId);
+  }, []);
+
+  const impactStats = [
+    { label: "Brokerage saved", target: 24000000, format: (value) => `₹${(value / 10000000).toFixed(1)}Cr` },
+    { label: "Happy users", target: 12400, format: (value) => `${value.toLocaleString("en-IN")}+` },
+    { label: "Platform fee this month", target: 184000, format: (value) => `₹${value.toLocaleString("en-IN")}` },
+  ];
+
+  const flashToast = (message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 1800);
+  };
 
   const recommendedProperties = properties.slice(0, 3);
   const roommateMatches = candidates.slice(0, 2);
@@ -174,6 +213,161 @@ export default function DashboardPage() {
               </div>
             </section>
 
+            <section className="mt-6 rounded-[28px] border border-amber-500/20 bg-gradient-to-r from-[#0B1220] via-[#0D1117] to-[#121A2A] p-5 shadow-2xl shadow-black/25 sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">HabiWise Impact</p>
+                  <h2 className="mt-2 text-2xl font-black text-white">Platform value in motion</h2>
+                </div>
+                <div className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                  Live ticker
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                {impactStats.map((stat) => {
+                  const value = Math.round(stat.target * impactProgress);
+                  return (
+                    <div key={stat.label} className="rounded-2xl border border-slate-800 bg-[#0B1220] p-5">
+                      <p className="text-sm text-slate-400">{stat.label}</p>
+                      <p className="mt-4 text-3xl font-black text-amber-300">{stat.format(value)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="mt-6 rounded-[28px] border border-slate-800 bg-gradient-to-br from-[#0B1220] via-[#0D1117] to-slate-900 p-5 shadow-2xl shadow-black/30 sm:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-amber-400/60 bg-slate-950 text-2xl font-black text-white shadow-lg shadow-black/30 sm:h-28 sm:w-28 sm:text-3xl">
+                    {trustScore}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.24em] text-slate-400">Trust Score</p>
+                      <h2 className="mt-1 text-2xl font-black text-white">Your Trust Score</h2>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${trustTier.badgeClass}`}>
+                        {trustTier.icon} {trustTier.label}
+                      </span>
+                      {verifiedElite && (
+                        <span className="rounded-full border border-amber-400/40 bg-amber-500/10 px-3 py-1 text-sm font-semibold text-amber-200">
+                          HabiWise Verified Elite
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-300">{trustTier.benefit}</p>
+                  </div>
+                </div>
+
+                <div className="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5">
+                  <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
+                    <span>Progress to 100</span>
+                    <span className="font-semibold text-amber-300">{trustScore}/100</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full border border-slate-700 bg-slate-800/70">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-700 ease-out"
+                      style={{ width: `${trustScore}%` }}
+                    />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-sm text-slate-300">
+                    <span>Basic</span>
+                    <span>Trusted</span>
+                    <span>Elite</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Verification Checklist</p>
+                  <div className="mt-4 space-y-3 text-sm">
+                    {[
+                      { label: "Email Verified", done: !!trustSource.emailVerified, action: null, points: null },
+                      { label: "Profile Complete", done: !!trustSource.profileComplete, action: null, points: null },
+                      { label: "Aadhaar Upload", done: !!trustSource.aadhaarUploaded, action: "Upload", points: "+20 pts" },
+                      { label: "College/Work ID", done: !!trustSource.idUploaded, action: "Upload", points: "+15 pts" },
+                      { label: "Roommate Review", done: Number(trustSource.roommateReviews) > 0, action: "Request", points: "+20 pts" },
+                      { label: "Rent History", done: !!trustSource.rentPaidOnTime, action: "Add", points: "+15 pts" },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 transition-all duration-300 ease-out hover:border-slate-700"
+                      >
+                        <div className="min-w-0">
+                          <p className={item.done ? "text-slate-100" : "text-slate-200"}>
+                            {item.done ? "✅" : "⬜"} {item.label}
+                          </p>
+                          {!item.done && item.points && <p className="text-xs text-slate-400">{item.points}</p>}
+                        </div>
+
+                        {item.done ? (
+                          <span className="text-xs font-semibold text-emerald-300">Done</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => flashToast(`${item.action} requested for ${item.label}`)}
+                            className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/20"
+                          >
+                            {item.action} →
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">How to improve</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowTrustHelp((prev) => !prev)}
+                      className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs font-semibold text-slate-300 transition hover:border-amber-500/40 hover:text-amber-200"
+                    >
+                      {showTrustHelp ? "Hide" : "Show"}
+                    </button>
+                  </div>
+
+                  <div className={`mt-4 space-y-3 overflow-hidden transition-all duration-300 ease-out ${showTrustHelp ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
+                    {trustItems.length > 0 ? (
+                      trustItems.map((item) => (
+                        <div key={item.key} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+                          <div>
+                            <p className="text-sm font-semibold text-white">{item.label}</p>
+                            <p className="text-xs text-slate-400">Complete this to raise your score.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => flashToast(`${item.action} started for ${item.label}`)}
+                            className="rounded-full bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/25"
+                          >
+                            {item.action} →
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+                        All trust actions are complete. Keep it up.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2 xl:col-span-1">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Tier Benefits</p>
+                  <div className="mt-4 space-y-3 text-sm text-slate-300">
+                    <p className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2">Basic: Build up your profile to unlock deposit savings.</p>
+                    <p className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2">Trusted: 50% deposit waiver on eligible listings.</p>
+                    <p className="rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2">Elite: Zero deposit properties with top trust status.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
               <div className="space-y-6 xl:col-span-2">
                 <div>
@@ -248,6 +442,12 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-2xl shadow-black/30">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

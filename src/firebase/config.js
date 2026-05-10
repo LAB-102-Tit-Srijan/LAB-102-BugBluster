@@ -39,6 +39,8 @@ export const isFirebaseConfigured =
 export const firebaseSetupMessage =
   "Firebase is not configured. Add all VITE_FIREBASE_* values in .env, then restart npm run dev.";
 
+export { firebaseConfig };
+
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);

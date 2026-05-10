@@ -8,8 +8,9 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, firebaseSetupMessage, isFirebaseConfigured } from "../firebase/config";
+import { calculateTrustScore } from "../utils/trustScore";
 
 // Firestore collections schema:
 // users: { id, name, email, gender, role, college, company, budget, area }
@@ -36,6 +37,20 @@ const buildUserProfile = (user, profileData = {}) => {
     company: normalizedProfile.company || "",
     budget: normalizedProfile.budget || "",
     area: normalizedProfile.area || "",
+    profileComplete: normalizedProfile.profileComplete ?? Boolean(normalizedProfile.name && (normalizedProfile.college || normalizedProfile.company)),
+    emailVerified: normalizedProfile.emailVerified ?? user.emailVerified ?? false,
+    aadhaarUploaded: normalizedProfile.aadhaarUploaded ?? false,
+    idUploaded: normalizedProfile.idUploaded ?? false,
+    roommateReviews: normalizedProfile.roommateReviews ?? 0,
+    rentPaidOnTime: normalizedProfile.rentPaidOnTime ?? false,
+    trustScore: calculateTrustScore({
+      profileComplete: normalizedProfile.profileComplete ?? Boolean(normalizedProfile.name && (normalizedProfile.college || normalizedProfile.company)),
+      emailVerified: normalizedProfile.emailVerified ?? user.emailVerified ?? false,
+      aadhaarUploaded: normalizedProfile.aadhaarUploaded ?? false,
+      idUploaded: normalizedProfile.idUploaded ?? false,
+      roommateReviews: normalizedProfile.roommateReviews ?? 0,
+      rentPaidOnTime: normalizedProfile.rentPaidOnTime ?? false,
+    }),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -55,15 +70,51 @@ export function AuthProvider({ children }) {
     if (!isFirebaseConfigured) {
       const savedUser = localStorage.getItem(DEMO_USER_KEY);
       if (savedUser) {
-        setCurrentUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setCurrentUser({
+          ...parsedUser,
+          profileComplete: parsedUser.profileComplete ?? false,
+          emailVerified: parsedUser.emailVerified ?? false,
+          aadhaarUploaded: parsedUser.aadhaarUploaded ?? false,
+          idUploaded: parsedUser.idUploaded ?? false,
+          roommateReviews: parsedUser.roommateReviews ?? 0,
+          rentPaidOnTime: parsedUser.rentPaidOnTime ?? false,
+          trustScore: calculateTrustScore(parsedUser),
+        });
       }
       setLoading(false);
       return () => {};
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setCurrentUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        const mergedUser = {
+          ...user,
+          ...userData,
+          emailVerified: user.emailVerified,
+        };
+
+        mergedUser.trustScore = calculateTrustScore(mergedUser);
+        if (!userDoc.exists() || userDoc.data()?.trustScore !== mergedUser.trustScore) {
+          await setDoc(userRef, { ...userData, trustScore: mergedUser.trustScore, updatedAt: serverTimestamp() }, { merge: true });
+        }
+        setCurrentUser(mergedUser);
+      } catch {
+        const fallbackUser = { ...user, emailVerified: user.emailVerified };
+        fallbackUser.trustScore = calculateTrustScore(fallbackUser);
+        setCurrentUser(fallbackUser);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return unsubscribe;
@@ -82,7 +133,20 @@ export function AuthProvider({ children }) {
         uid: existingUser.id,
         email: existingUser.email,
         displayName: existingUser.name,
+        role: existingUser.role || "",
+        college: existingUser.college || "",
+        company: existingUser.company || "",
+        budget: existingUser.budget || "",
+        area: existingUser.area || "",
+        profileComplete: existingUser.profileComplete ?? false,
+        emailVerified: existingUser.emailVerified ?? false,
+        aadhaarUploaded: existingUser.aadhaarUploaded ?? false,
+        idUploaded: existingUser.idUploaded ?? false,
+        roommateReviews: existingUser.roommateReviews ?? 0,
+        rentPaidOnTime: existingUser.rentPaidOnTime ?? false,
       };
+
+      sessionUser.trustScore = calculateTrustScore(sessionUser);
 
       localStorage.setItem(DEMO_USER_KEY, JSON.stringify(sessionUser));
       setCurrentUser(sessionUser);
@@ -113,6 +177,12 @@ export function AuthProvider({ children }) {
         company: normalizedProfile.company || "",
         budget: normalizedProfile.budget || "",
         area: normalizedProfile.area || "",
+        profileComplete: normalizedProfile.profileComplete ?? false,
+        emailVerified: normalizedProfile.emailVerified ?? false,
+        aadhaarUploaded: normalizedProfile.aadhaarUploaded ?? false,
+        idUploaded: normalizedProfile.idUploaded ?? false,
+        roommateReviews: normalizedProfile.roommateReviews ?? 0,
+        rentPaidOnTime: normalizedProfile.rentPaidOnTime ?? false,
       };
 
       users.push(demoUser);
@@ -122,7 +192,20 @@ export function AuthProvider({ children }) {
         uid: demoUser.id,
         email: demoUser.email,
         displayName: demoUser.name,
+        role: demoUser.role,
+        college: demoUser.college,
+        company: demoUser.company,
+        budget: demoUser.budget,
+        area: demoUser.area,
+        profileComplete: demoUser.profileComplete,
+        emailVerified: demoUser.emailVerified,
+        aadhaarUploaded: demoUser.aadhaarUploaded,
+        idUploaded: demoUser.idUploaded,
+        roommateReviews: demoUser.roommateReviews,
+        rentPaidOnTime: demoUser.rentPaidOnTime,
       };
+
+      sessionUser.trustScore = calculateTrustScore(sessionUser);
 
       localStorage.setItem(DEMO_USER_KEY, JSON.stringify(sessionUser));
       setCurrentUser(sessionUser);

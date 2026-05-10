@@ -4,6 +4,11 @@ export default function PropertyCard({ property, theme = "dark", communityBadge 
   const dark = theme === "dark";
   const cardClassName = "group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-indigo-500/40";
   const rent = property.rent ?? property.price ?? 0;
+  const depositBadge = property.zeroDepositAvailable
+    ? { text: "⚡ Zero Deposit — Elite members", className: "border-amber-400/40 bg-amber-500/20 text-amber-200" }
+    : property.halfDepositAvailable
+      ? { text: "💫 50% Deposit — Trusted members", className: "border-slate-300/40 bg-slate-300/15 text-slate-100" }
+      : { text: "🔒 Full Deposit Required", className: "border-slate-600 bg-slate-700/30 text-slate-300" };
   const riskTone =
     property.scamRisk === "High"
       ? "border-red-500/30 bg-red-500/10 text-red-300"
@@ -58,6 +63,12 @@ export default function PropertyCard({ property, theme = "dark", communityBadge 
             <p className="text-sm text-slate-400">Safety Score</p>
             <p className="text-lg font-bold text-slate-100">🛡 {property.safetyScore?.toFixed ? property.safetyScore.toFixed(1) : property.safetyScore || "9.0"}/10</p>
           </div>
+        </div>
+
+        <div>
+          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${depositBadge.className}`}>
+            {depositBadge.text}
+          </span>
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-200">
