@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -12,9 +13,17 @@ import RoommateMatchPage from "./pages/RoommateMatchPage";
 import RoommateResultsPage from "./pages/RoommateResultsPage";
 import ExpenseDashboard from "./pages/ExpenseDashboard";
 import MaintenancePage from "./pages/MaintenancePage";
+import PostPropertyPage from "./pages/PostPropertyPage";
+import { seedPropertiesIfEmpty } from "./utils/seedProperties";
 
 export default function App() {
   const { currentUser, loading } = useAuth();
+
+  useEffect(() => {
+    seedPropertiesIfEmpty().catch((error) => {
+      console.error("Unable to seed properties:", error);
+    });
+  }, []);
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen"><div className="w-8 h-8 border-t-2 border-b-2 border-indigo-600 rounded-full animate-spin"></div></div>;
@@ -28,6 +37,7 @@ export default function App() {
 
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/listings" element={<ProtectedRoute><ListingsPage /></ProtectedRoute>} />
+      <Route path="/post-property" element={<ProtectedRoute><PostPropertyPage /></ProtectedRoute>} />
       <Route path="/property/:id" element={<ProtectedRoute><PropertyDetailPage /></ProtectedRoute>} />
       <Route path="/roommate-match" element={<ProtectedRoute><RoommateMatchPage /></ProtectedRoute>} />
       <Route path="/roommate-results" element={<ProtectedRoute><RoommateResultsPage /></ProtectedRoute>} />

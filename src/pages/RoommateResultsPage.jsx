@@ -5,26 +5,33 @@ import { candidates } from "../data/candidates";
 import { getTopMatches } from "../utils/matchingLogic";
 import SharedPods from "../components/SharedPods";
 import { FEE_CONFIG } from "../utils/feeCalculator";
+import { createConnection } from "../utils/connectionHelpers";
+import { useAuth } from "../context/AuthContext";
 
 export default function RoommateResultsPage() {
   const location = useLocation();
-  const userPrefs = location.state || {};
+  const { currentUser } = useAuth();
+  const userPrefs = location.state?.userPrefs || location.state || {};
+  const cityLabel = location.state?.city || "";
+  const areaLabel = location.state?.area || "";
+  const presetMatches = Array.isArray(location.state?.matches) ? location.state.matches : null;
   const [isCalculating, setIsCalculating] = useState(true);
   const [matches, setMatches] = useState([]);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [connectionCreating, setConnectionCreating] = useState(false);
 
   useEffect(() => {
     // Calculate matches after 2 seconds to show the animation
     const timer = setTimeout(() => {
-      const topMatches = getTopMatches(userPrefs, candidates);
+      const topMatches = presetMatches || getTopMatches(userPrefs, candidates);
       setMatches(topMatches);
       setIsCalculating(false);
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [userPrefs]);
+  }, [presetMatches, userPrefs]);
 
   return (
     <>
@@ -34,7 +41,10 @@ export default function RoommateResultsPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">Your Flatmate Matches</h1>
-            <p className="text-slate-400">Based on your lifestyle choices, here are your best matches:</p>
+            <p className="text-slate-400">
+              Based on your lifestyle choices, here are your best matches{cityLabel ? ` in ${cityLabel}` : ""}
+              {areaLabel ? ` near ${areaLabel}` : ""}:
+            </p>
           </div>
 
           {isCalculating ? (
@@ -116,11 +126,32 @@ export default function RoommateResultsPage() {
             <div className="mt-6 flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => {
+                disabled={connectionCreating}
+                onClick={async () => {
+                  setConnectionCreating(true);
+                  try {
+                    // Create connection document
+                    const connectionData = {
+                      seekerId: currentUser?.uid || "guest",
+                      seekerName: currentUser?.displayName || "Anonymous",
+                      seekerCollege: currentUser?.college || "Not specified",
+                      seekerCompatibility: selectedCandidate.compatibility,
+                      seekerInterests: selectedCandidate.interests || [],
+                      seekerLifestyle: selectedCandidate.lifestyle || {},
+                      ownerId: selectedCandidate.userId || selectedCandidate.id,
+                      ownerName: selectedCandidate.name,
+                      propertyId: selectedCandidate.propertyId || "unknown",
+                      propertyName: selectedCandidate.propertyName || "Property",
+                      status: "pending",
+                    };
+                    await createConnection(connectionData);
+                  } finally {
+                    setConnectionCreating(false);
+                  }
                   setShowFeeModal(false);
                   setShowSuccessModal(true);
                 }}
-                className="flex-1 rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
+                className="flex-1 rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400 disabled:opacity-50"
               >
                 Connect for ₹{FEE_CONFIG.roommateMatch}
               </button>
@@ -138,20 +169,30 @@ export default function RoommateResultsPage() {
 
       {showSuccessModal && selectedCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-md rounded-3xl border border-emerald-500/25 bg-[#0D1117] p-6 text-slate-100 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.24em] text-emerald-300/80">Success</p>
-            <h3 className="mt-3 text-2xl font-black text-white">✅ Connected!</h3>
-            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-300">
-              <p>{selectedCandidate.name}&apos;s contact shared.</p>
-              <p className="mt-2">HabiWise earned: ₹{FEE_CONFIG.roommateMatch}</p>
+          <div className="w-full max-w-md rounded-3xl border border-amber-500/25 bg-[#0D1117] p-6 text-slate-100 shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Request Sent</p>
+            <h3 className="mt-3 text-2xl font-black text-white">🎉 Request Sent!</h3>
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 space-y-3 text-sm text-slate-300">
+              <p>Your connection request has been sent to</p>
+              <p className="font-bold text-white text-lg">{selectedCandidate.name}</p>
+              <div className="flex items-center gap-2 text-amber-300 font-semibold">
+                <span>💛</span>
+                <span>Waiting for their response</span>
+              </div>
+              <p className="text-xs text-slate-400">You'll be notified when they respond</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowSuccessModal(false)}
-              className="mt-5 w-full rounded-xl bg-emerald-500 px-4 py-3 font-black text-black transition hover:bg-emerald-400"
-            >
-              Done
-            </button>
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setSelectedCandidate(null);
+                }}
+                className="flex-1 rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
+              >
+                Great!
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -28,22 +28,39 @@ const placeholderValues = new Set([
   "your_app_id",
 ]);
 
+const looksLikeLocalPlaceholder = (val) => {
+  if (!val || typeof val !== "string") return true;
+  const v = val.toLowerCase();
+  return v.startsWith("dev_") || v.includes("dev-project") || v.includes("your_") || v.includes("habiwise-local") || v.includes("dummy");
+};
+
 export const isFirebaseConfigured =
   !placeholderValues.has(firebaseConfig.apiKey) &&
   !placeholderValues.has(firebaseConfig.authDomain) &&
   !placeholderValues.has(firebaseConfig.projectId) &&
   !placeholderValues.has(firebaseConfig.storageBucket) &&
   !placeholderValues.has(firebaseConfig.messagingSenderId) &&
-  !placeholderValues.has(firebaseConfig.appId);
+  !placeholderValues.has(firebaseConfig.appId) &&
+  // additional guard: treat obvious local dev placeholders as not configured
+  !looksLikeLocalPlaceholder(firebaseConfig.apiKey) &&
+  !looksLikeLocalPlaceholder(firebaseConfig.authDomain) &&
+  !looksLikeLocalPlaceholder(firebaseConfig.projectId);
 
 export const firebaseSetupMessage =
   "Firebase is not configured. Add all VITE_FIREBASE_* values in .env, then restart npm run dev.";
 
 export { firebaseConfig };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+let app = null;
+let auth = null;
+let db = null;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+if (isFirebaseConfigured) {
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
+
+export { auth, db };
 
 export default app;

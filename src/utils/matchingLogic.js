@@ -13,23 +13,26 @@ export function calculateCompatibility(userPrefs, candidate) {
   let score = 0;
   const maxScore = 120;
 
+  const normalizeValue = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+  const isSame = (left, right) => normalizeValue(left) === normalizeValue(right);
+
   // Sleep schedule match (+25)
-  if (userPrefs.sleepSchedule === candidate.sleepSchedule) {
+  if (isSame(userPrefs.sleepSchedule, candidate.sleepSchedule)) {
     score += 25;
   }
 
   // Cleanliness match (+20)
-  if (userPrefs.cleanliness === candidate.cleanliness) {
+  if (isSame(userPrefs.cleanliness, candidate.cleanliness)) {
     score += 20;
   }
 
   // Food preference match (+20)
-  if (userPrefs.foodPreference === candidate.foodPreference) {
+  if (isSame(userPrefs.foodPreference, candidate.foodPreference)) {
     score += 20;
   }
 
   // Social habits match (+20)
-  if (userPrefs.socialHabits === candidate.socialHabits) {
+  if (isSame(userPrefs.socialHabits, candidate.socialHabits)) {
     score += 20;
   }
 
@@ -41,8 +44,9 @@ export function calculateCompatibility(userPrefs, candidate) {
 
   // Shared interests (+10 per interest, max 2 = +20)
   if (userPrefs.interests && userPrefs.interests.length > 0) {
+    const candidateInterests = (candidate.interests || []).map((interest) => normalizeValue(interest));
     const sharedInterests = userPrefs.interests.filter((interest) =>
-      candidate.interests.includes(interest)
+      candidateInterests.includes(normalizeValue(interest))
     );
     const interestBonus = Math.min(sharedInterests.length * 10, 20);
     score += interestBonus;
@@ -57,7 +61,7 @@ export function calculateCompatibility(userPrefs, candidate) {
   const candidateExamPrep = candidate.examPrep || "";
 
   // Situation matching (bonus points)
-  if (userPrefs.situation && userPrefs.situation === candidate.situation) {
+  if (userPrefs.situation && isSame(userPrefs.situation, candidate.situation)) {
     compatibility += 10;
   }
 
@@ -69,11 +73,11 @@ export function calculateCompatibility(userPrefs, candidate) {
     compatibility += 15;
   }
 
-  if (myExamPrep && candidateExamPrep && myExamPrep === candidateExamPrep) {
+  if (myExamPrep && candidateExamPrep && isSame(myExamPrep, candidateExamPrep)) {
     compatibility += 10;
   }
 
-  if (userPrefs.stayDuration && candidate.stayDuration && userPrefs.stayDuration === candidate.stayDuration) {
+  if (userPrefs.stayDuration && candidate.stayDuration && isSame(userPrefs.stayDuration, candidate.stayDuration)) {
     compatibility += 10;
   }
 
@@ -85,12 +89,13 @@ export function calculateCompatibility(userPrefs, candidate) {
  */
 export function getConflictRisk(userPrefs, candidate) {
   let conflicts = 0;
+  const normalizeValue = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
 
   // Count mismatches
-  if (userPrefs.sleepSchedule !== candidate.sleepSchedule) conflicts++;
-  if (userPrefs.cleanliness !== candidate.cleanliness) conflicts++;
-  if (userPrefs.foodPreference !== candidate.foodPreference) conflicts++;
-  if (userPrefs.socialHabits !== candidate.socialHabits) conflicts++;
+  if (normalizeValue(userPrefs.sleepSchedule) !== normalizeValue(candidate.sleepSchedule)) conflicts++;
+  if (normalizeValue(userPrefs.cleanliness) !== normalizeValue(candidate.cleanliness)) conflicts++;
+  if (normalizeValue(userPrefs.foodPreference) !== normalizeValue(candidate.foodPreference)) conflicts++;
+  if (normalizeValue(userPrefs.socialHabits) !== normalizeValue(candidate.socialHabits)) conflicts++;
 
   if (conflicts === 0) return "Low";
   if (conflicts === 1 || conflicts === 2) return "Medium";
@@ -102,12 +107,15 @@ export function getConflictRisk(userPrefs, candidate) {
  */
 export function getSharedInterests(userPrefs, candidate) {
   if (!userPrefs.interests || userPrefs.interests.length === 0) return [];
+  const normalizeValue = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+  const candidateInterests = (candidate.interests || []).map((interest) => normalizeValue(interest));
   return userPrefs.interests.filter((interest) =>
-    candidate.interests.includes(interest)
+    candidateInterests.includes(normalizeValue(interest))
   );
 }
 
 function getSituationTag(userPrefs, candidate) {
+  const normalizeValue = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
   const myExamPrep = Array.isArray(userPrefs.examPrep)
     ? userPrefs.examPrep.find((item) => item !== "None") || ""
     : userPrefs.examPrep || "";
@@ -121,18 +129,18 @@ function getSituationTag(userPrefs, candidate) {
     return `Fellow ${userPrefs.branch} student 🎓`;
   }
 
-  if (myExamPrep && candidate.examPrep && myExamPrep === candidate.examPrep) {
+  if (myExamPrep && candidate.examPrep && normalizeValue(myExamPrep) === normalizeValue(candidate.examPrep)) {
     return `${myExamPrep} buddy 📚`;
   }
 
-  if (userPrefs.situation && candidate.situation && userPrefs.situation === candidate.situation) {
+  if (userPrefs.situation && candidate.situation && normalizeValue(userPrefs.situation) === normalizeValue(candidate.situation)) {
     if (candidate.situation === "Intern") return "Fellow intern 💼";
     if (candidate.situation === "Student") return "Fellow student 🎓";
     if (candidate.situation === "Freelancer") return "Fellow freelancer 💻";
     if (candidate.situation === "Employee") return "Fellow employee 🏢";
   }
 
-  if (userPrefs.stayDuration && candidate.stayDuration && userPrefs.stayDuration === candidate.stayDuration) {
+  if (userPrefs.stayDuration && candidate.stayDuration && normalizeValue(userPrefs.stayDuration) === normalizeValue(candidate.stayDuration)) {
     return "Short-stay match ⏳";
   }
 

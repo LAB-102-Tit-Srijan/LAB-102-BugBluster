@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import Navbar from "../components/Navbar";
 import PropertyCard from "../components/PropertyCard";
 import { useAuth } from "../context/AuthContext";
-import { properties } from "../data/properties";
+import { db, isFirebaseConfigured } from "../firebase/config";
 
 const amenityOptions = ["WiFi", "AC", "Food", "Parking", "Laundry"];
-const propertyTypes = ["PG", "Hostel", "Shared Flat", "Co-living"];
+const propertyTypes = ["PG", "Hostel", "Flat", "Co-living", "Shared Flat"];
 const cityOptions = ["All Cities", "Bengaluru", "Pune", "Indore"];
 const studentBranchOptions = ["CSE", "ECE", "MBA", "Law", "Medical", "Commerce", "Arts", "Other"];
 const studentExamOptions = ["UPSC", "CAT", "GATE", "JEE", "CA", "NEET"];
@@ -73,6 +74,10 @@ const getCommuteScore = (property) => {
 const getRating = (property) => property.rating ?? property.reviewRating ?? property.safetyScore ?? 0;
 
 const getListedValue = (property) => {
+  if (typeof property.createdAt?.seconds === "number") {
+    return property.createdAt.seconds * 1000;
+  }
+
   const parsed = Date.parse(property.listedDate || "");
   if (Number.isFinite(parsed)) {
     return parsed;
@@ -86,6 +91,8 @@ const toggleArrayValue = (arr, value) => (arr.includes(value) ? arr.filter((item
 
 export default function ListingsPage() {
   const { currentUser } = useAuth();
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [city, setCity] = useState("All Cities");
   const [draftFilters, setDraftFilters] = useState(defaultFilters);
@@ -105,6 +112,39 @@ export default function ListingsPage() {
   const normalizedRole = (currentUser?.role || localProfile.role || "Student").toLowerCase();
   const roleLabel = normalizedRole.includes("professional") ? "Professional" : "Student";
   const isStudent = roleLabel === "Student";
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) {
+      // Demo mode: load from localStorage
+      try {
+        const demoProperties = JSON.parse(localStorage.getItem("habiwise_demo_properties") || "[]");
+        setProperties(demoProperties);
+      } catch {
+        setProperties([]);
+      }
+      setLoading(false);
+      return undefined;
+    }
+
+    const propertiesQuery = query(collection(db, "properties"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(
+      propertiesQuery,
+      (snapshot) => {
+        const data = snapshot.docs.map((docSnapshot) => ({
+          id: docSnapshot.id,
+          ...docSnapshot.data(),
+        }));
+        setProperties(data);
+        setLoading(false);
+      },
+      () => {
+        setProperties([]);
+        setLoading(false);
+      }
+    );
+
+    return () => unsub();
+  }, []);
 
   const filteredProperties = useMemo(() => {
     const result = properties.filter((property) => {
@@ -202,7 +242,7 @@ export default function ListingsPage() {
     }
 
     return sorted;
-  }, [appliedFilters, city, isStudent, searchQuery]);
+  }, [appliedFilters, city, isStudent, properties, searchQuery]);
 
   const toggleAmenity = (amenity) => {
     setDraftFilters((current) => ({
@@ -764,7 +804,7 @@ export default function ListingsPage() {
                 Filters & Sort
               </button>
               <div className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-300">
-                Showing {filteredProperties.length} properties
+                {loading ? "Loading properties..." : `Showing ${filteredProperties.length} properties`}
               </div>
             </div>
           </div>
@@ -800,7 +840,24 @@ export default function ListingsPage() {
                 </div>
               </div>
 
-              {filteredProperties.length === 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div key={idx} className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl shadow-black/20">
+                      <div className="h-40 animate-pulse rounded-xl bg-slate-800" />
+                      <div className="mt-4 space-y-3">
+                        <div className="h-4 w-3/5 animate-pulse rounded bg-slate-800" />
+                        <div className="h-4 w-2/5 animate-pulse rounded bg-slate-800" />
+                        <div className="h-8 w-full animate-pulse rounded bg-slate-800" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : properties.length === 0 ? (
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-300 shadow-2xl shadow-black/20">
+                  No properties yet. Be the first to post!
+                </div>
+              ) : filteredProperties.length === 0 ? (
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400 shadow-2xl shadow-black/20">
                   No properties match your current filters.
                 </div>

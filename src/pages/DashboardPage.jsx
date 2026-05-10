@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { isFirebaseConfigured } from "../firebase/config";
 import PropertyCard from "../components/PropertyCard";
 import MatchCard from "../components/MatchCard";
 import SharedPods from "../components/SharedPods";
+import MyConnections from "../components/MyConnections";
+import MyMatches from "../components/MyMatches";
 import { useAuth } from "../context/AuthContext";
 import { candidates } from "../data/candidates";
 import { properties } from "../data/properties";
@@ -72,6 +75,16 @@ export default function DashboardPage() {
   const trustTier = getTrustTier(trustScore);
   const trustItems = getTrustImprovementItems(trustSource);
   const verifiedElite = trustTier.key === "elite";
+  const lifestyleProfile = trustSource?.lifestyleProfile;
+  const hasLifestyleProfile = Boolean(lifestyleProfile?.isProfileSaved);
+  const lifestyleTags = [
+    lifestyleProfile?.sleepSchedule ? `🌙 ${String(lifestyleProfile.sleepSchedule).replace(/_/g, " ")}` : null,
+    lifestyleProfile?.foodPreference ? `🥗 ${String(lifestyleProfile.foodPreference).replace(/_/g, " ")}` : null,
+    lifestyleProfile?.cleanliness ? `🧹 ${String(lifestyleProfile.cleanliness).replace(/_/g, " ")}` : null,
+    lifestyleProfile?.socialHabits ? `🤫 ${String(lifestyleProfile.socialHabits).replace(/_/g, " ")}` : null,
+    lifestyleProfile?.budget ? `💰 ₹${Number(lifestyleProfile.budget).toLocaleString("en-IN")}` : null,
+    lifestyleProfile?.examPrep ? `📚 ${String(lifestyleProfile.examPrep).replace(/_/g, " ")}` : null,
+  ].filter(Boolean);
 
   useEffect(() => {
     const startTime = performance.now();
@@ -213,29 +226,53 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            <section className="mt-6 rounded-[28px] border border-amber-500/20 bg-gradient-to-r from-[#0B1220] via-[#0D1117] to-[#121A2A] p-5 shadow-2xl shadow-black/25 sm:p-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">HabiWise Impact</p>
-                  <h2 className="mt-2 text-2xl font-black text-white">Platform value in motion</h2>
+            {isFirebaseConfigured ? (
+              <section className="mt-6 rounded-[28px] border border-amber-500/20 bg-gradient-to-r from-[#0B1220] via-[#0D1117] to-[#121A2A] p-5 shadow-2xl shadow-black/25 sm:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">HabiWise Impact</p>
+                    <h2 className="mt-2 text-2xl font-black text-white">Platform value in motion</h2>
+                  </div>
+                  <div className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                    Live ticker
+                  </div>
                 </div>
-                <div className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
-                  Live ticker
-                </div>
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                {impactStats.map((stat) => {
-                  const value = Math.round(stat.target * impactProgress);
-                  return (
-                    <div key={stat.label} className="rounded-2xl border border-slate-800 bg-[#0B1220] p-5">
-                      <p className="text-sm text-slate-400">{stat.label}</p>
-                      <p className="mt-4 text-3xl font-black text-amber-300">{stat.format(value)}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {impactStats.map((stat) => {
+                    const value = Math.round(stat.target * impactProgress);
+                    return (
+                      <div key={stat.label} className="rounded-2xl border border-slate-800 bg-[#0B1220] p-5">
+                        <p className="text-sm text-slate-400">{stat.label}</p>
+                        <p className="mt-4 text-3xl font-black text-amber-300">{stat.format(value)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : (
+              <section className="mt-6 rounded-[28px] border border-slate-800 bg-gradient-to-br from-[#0B1220] via-[#0D1117] to-slate-900 p-5 shadow-2xl shadow-black/30 sm:p-6">
+                <div className="mb-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-400">HabiWise Impact</p>
+                  <h2 className="mt-2 text-2xl font-black text-white">Platform value (demo)</h2>
+                </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 text-slate-400">
+                    <p className="text-sm">Brokerage saved</p>
+                    <p className="mt-3 text-sm">Tip: Add a property under Listings to start tracking savings.</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 text-slate-400">
+                    <p className="text-sm">Happy users</p>
+                    <p className="mt-3 text-sm">Tip: Invite friends to HabiWise to build your roommate network.</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 text-slate-400">
+                    <p className="text-sm">Platform fee this month</p>
+                    <p className="mt-3 text-sm">Tip: Enable mock payments to preview fee flows (dev only).</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm text-slate-500">Connect a Firebase project to enable live stats. These tips help beginners get started.</p>
+              </section>
+            )}
 
             <section className="mt-6 rounded-[28px] border border-slate-800 bg-gradient-to-br from-[#0B1220] via-[#0D1117] to-slate-900 p-5 shadow-2xl shadow-black/30 sm:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -423,6 +460,42 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-black/20">
+                  <h2 className="text-xl font-bold text-white">Lifestyle Profile</h2>
+                  {hasLifestyleProfile ? (
+                    <>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {lifestyleTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <Link
+                        to="/roommate-match?editLifestyle=1"
+                        className="mt-4 inline-flex rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20"
+                      >
+                        ✏️ Edit Lifestyle
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-4 text-sm text-slate-300">
+                        Complete your lifestyle profile to get better matches.
+                      </p>
+                      <Link
+                        to="/roommate-match"
+                        className="mt-4 inline-flex rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-400"
+                      >
+                        Fill Now →
+                      </Link>
+                    </>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-black/20">
                   <h2 className="text-xl font-bold text-white">
                     {isProfessional ? "Office-nearby Stays" : "Nearby Colleges"}
                   </h2>
@@ -439,6 +512,20 @@ export default function DashboardPage() {
                 </div>
               </div>
             </section>
+
+            {/* My Connections for Seekers */}
+            {!isProfessional && (
+              <section className="mt-8">
+                <MyConnections />
+              </section>
+            )}
+
+            {/* My Matches for Owners */}
+            {isProfessional && (
+              <section className="mt-8">
+                <MyMatches />
+              </section>
+            )}
           </div>
         </main>
       </div>

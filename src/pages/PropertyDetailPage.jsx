@@ -1,10 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import Navbar from "../components/Navbar";
 import { properties } from "../data/properties";
 import { useAuth } from "../context/AuthContext";
 import { calculateTrustScore, getTrustTier } from "../utils/trustScore";
 import { calculateBookingFee, calculateDepositFee } from "../utils/feeCalculator";
+import { db, isFirebaseConfigured } from "../firebase/config";
 
 const AmenityIcons = {
   WiFi: "📶",
@@ -25,15 +27,126 @@ export default function PropertyDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const property = properties.find((p) => p.id === parseInt(id));
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [mainImageIdx, setMainImageIdx] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [showReserveModal, setShowReserveModal] = useState(false);
+  const [reserveFormData, setReserveFormData] = useState({
+    visitorName: currentUser?.displayName || "",
+    visitorPhone: "",
+    visitorEmail: currentUser?.email || "",
+    preferredDate: "",
+    message: "",
+  });
+  const [reserveConfirmed, setReserveConfirmed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const normalizeProperty = (rawProperty) => {
+      if (!rawProperty) {
+        return null;
+      }
+
+      return {
+        images: ["https://via.placeholder.com/800x500?text=HabiWise+Property"],
+        amenities: [],
+        roomTypes: [{ type: "Shared", price: Number(rawProperty.rent || 0), bedCount: 2 }],
+        nearby: [],
+        ownerName: "HabiWise Owner",
+        ownerPhone: "Contact in app",
+        occupancy: "Shared",
+        commuteHours: "City commute",
+        scamRisk: "Low",
+        safetyScore: 8.5,
+        ...rawProperty,
+      };
+    };
+
+    const loadProperty = async () => {
+      if (isFirebaseConfigured && db) {
+        try {
+          const snapshot = await getDoc(doc(db, "properties", id));
+          if (snapshot.exists()) {
+            if (active) {
+              setProperty(normalizeProperty({ id: snapshot.id, ...snapshot.data() }));
+              setLoading(false);
+            }
+            return;
+          }
+        } catch (error) {
+          console.error("Property fetch failed:", error);
+        }
+      }
+
+      // Demo mode: check localStorage
+      let fallback = null;
+      try {
+        const demoProperties = JSON.parse(localStorage.getItem("habiwise_demo_properties") || "[]");
+        fallback = demoProperties.find((item) => String(item.id) === String(id));
+      } catch {}
+
+      // Fallback to static data
+      if (!fallback) {
+        fallback = properties.find((item) => String(item.id) === String(id));
+      }
+
+      if (active) {
+        setProperty(normalizeProperty(fallback));
+        setLoading(false);
+      }
+    };
+
+    loadProperty();
+
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    setMainImageIdx(0);
+  }, [id]);
+
+  const handleReserveSubmit = (e) => {
+    e.preventDefault();
+    if (!reserveFormData.visitorName || !reserveFormData.visitorPhone || !reserveFormData.preferredDate) {
+      alert("Please fill all required fields");
+      return;
+    }
+
+    // Save booking to localStorage
+    try {
+      const bookings = JSON.parse(localStorage.getItem("habiwise_bookings") || "[]");
+      bookings.push({
+        id: Date.now().toString(),
+        propertyId: property.id,
+        propertyTitle: property.title,
+        propertyLocation: property.location,
+        ...reserveFormData,
+        bookingDate: new Date().toISOString(),
+        status: "confirmed",
+      });
+      localStorage.setItem("habiwise_bookings", JSON.stringify(bookings));
+    } catch {}
+
+    setReserveConfirmed(true);
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 text-slate-300">Loading property...</div>
+      </>
+    );
+  }
 
   const trustScore = currentUser?.trustScore ?? calculateTrustScore(currentUser || {});
   const trustTier = getTrustTier(trustScore);
-  const bookingFee = calculateBookingFee(property.rent);
-  const depositFee = calculateDepositFee(property.securityDeposit);
+  const bookingFee = calculateBookingFee(Number(property.rent || 0));
+  const depositFee = calculateDepositFee(Number(property.securityDeposit || 0));
   const eliteDiscountAmount = trustTier.key === "elite" ? Math.round(bookingFee.platformFee * 0.2) : 0;
   const totalPayable = bookingFee.rent + bookingFee.platformFee - eliteDiscountAmount + depositFee.handlingFee;
   const traditionalBrokerLow = property.rent;
@@ -290,17 +403,20 @@ export default function PropertyDetailPage() {
                 <div className="mt-5 grid gap-3">
                   <button
                     type="button"
-                    onClick={() => navigate("/roommate-match")}
-                    className="rounded-xl border border-amber-500/30 bg-transparent px-4 py-3 font-black text-amber-300 transition hover:bg-amber-500/10"
+                    onClick={() => {
+                      const message = `Hi, I'm interested in visiting ${property.title} at ${property.location}. Can we schedule a visit?`;
+                      window.location.href = `tel:${property.ownerPhone}`;
+                    }}
+                    className="rounded-xl border border-emerald-500/30 bg-transparent px-4 py-3 font-black text-emerald-300 transition hover:bg-emerald-500/10"
                   >
-                    📅 Book Visit - Free
+                    📞 Call Owner - Free
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowReserveModal(true)}
                     className="rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
                   >
-                    🔒 Reserve Room - ₹{totalPayable.toLocaleString()}
+                    📅 Schedule Visit - ₹{bookingFee.platformFee.toLocaleString()}
                   </button>
                 </div>
 
@@ -327,8 +443,12 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition">
-                    📞 Contact Owner
+                  <button
+                    type="button"
+                    onClick={() => window.location.href = `tel:${property.ownerPhone}`}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition"
+                  >
+                    📞 Call Owner
                   </button>
                   <p className="text-slate-400 text-xs text-center">{property.ownerPhone}</p>
                 </div>
@@ -356,19 +476,103 @@ export default function PropertyDetailPage() {
       {showReserveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-md rounded-3xl border border-amber-500/25 bg-[#0D1117] p-6 text-slate-100 shadow-2xl shadow-black/40">
-            <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Success</p>
-            <h3 className="mt-3 text-2xl font-black text-white">🎉 Room Reserved!</h3>
-            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-300">
-              <p>HabiWise Fee: ₹{bookingFee.platformFee.toLocaleString()}</p>
-              <p className="mt-2">Booking confirmed - owner will contact you in 24hrs</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowReserveModal(false)}
-              className="mt-5 w-full rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
-            >
-              Done
-            </button>
+            {reserveConfirmed ? (
+              <>
+                <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Success</p>
+                <h3 className="mt-3 text-2xl font-black text-white">🎉 Booking Confirmed!</h3>
+                <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 space-y-3 text-sm text-slate-300">
+                  <div>
+                    <p className="text-xs text-slate-400">Property</p>
+                    <p className="font-semibold text-white">{property.title}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Preferred Visit Date</p>
+                    <p className="font-semibold text-white">{reserveFormData.preferredDate}</p>
+                  </div>
+                  <div className="pt-3 border-t border-slate-700">
+                    <p className="text-amber-300 font-semibold">Owner will contact you in 24 hours at {reserveFormData.visitorPhone}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReserveModal(false);
+                    setReserveConfirmed(false);
+                    navigate("/listings");
+                  }}
+                  className="mt-5 w-full rounded-xl bg-amber-500 px-4 py-3 font-black text-black transition hover:bg-amber-400"
+                >
+                  Back to Listings
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs uppercase tracking-[0.24em] text-amber-300/80">Reserve Room</p>
+                <h3 className="mt-3 text-2xl font-black text-white">📋 Booking Details</h3>
+                <form onSubmit={handleReserveSubmit} className="mt-5 space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">Your Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={reserveFormData.visitorName}
+                      onChange={(e) => setReserveFormData({ ...reserveFormData, visitorName: e.target.value })}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-white focus:border-amber-500 outline-none"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={reserveFormData.visitorPhone}
+                      onChange={(e) => setReserveFormData({ ...reserveFormData, visitorPhone: e.target.value })}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-white focus:border-amber-500 outline-none"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">Preferred Visit Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={reserveFormData.preferredDate}
+                      onChange={(e) => setReserveFormData({ ...reserveFormData, preferredDate: e.target.value })}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-white focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-2">Message (Optional)</label>
+                    <textarea
+                      value={reserveFormData.message}
+                      onChange={(e) => setReserveFormData({ ...reserveFormData, message: e.target.value })}
+                      className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-white focus:border-amber-500 outline-none text-sm"
+                      placeholder="Add any message for the owner..."
+                      rows="3"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowReserveModal(false);
+                        setReserveConfirmed(false);
+                      }}
+                      className="flex-1 rounded-lg bg-slate-800 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-700"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-black text-black hover:bg-amber-400"
+                    >
+                      Confirm Booking
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

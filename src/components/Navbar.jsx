@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import ConnectionBell from "./ConnectionBell";
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -30,12 +31,16 @@ export default function Navbar() {
                 <Link to="/listings" className="font-medium text-slate-300 hover:text-indigo-300">
                   Listings
                 </Link>
+                <Link to="/post-property" className="font-medium text-amber-300 hover:text-amber-200">
+                  Post Property
+                </Link>
                 <Link to="/roommate-match" className="font-medium text-slate-300 hover:text-indigo-300">
                   Roommates
                 </Link>
                 <Link to="/dashboard" className="font-medium text-slate-300 hover:text-indigo-300">
                   Dashboard
                 </Link>
+                <ConnectionBell />
                 <span className="text-slate-400">{currentUser.email}</span>
                 <button
                   onClick={handleLogout}
@@ -78,6 +83,13 @@ export default function Navbar() {
                     className="rounded-lg px-3 py-2 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-indigo-300"
                   >
                     Listings
+                  </Link>
+                  <Link
+                    to="/post-property"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg px-3 py-2 font-medium text-amber-300 transition hover:bg-slate-800 hover:text-amber-200"
+                  >
+                    Post Property
                   </Link>
                   <Link
                     to="/roommate-match"

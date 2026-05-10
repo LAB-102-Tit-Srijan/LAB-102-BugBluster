@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HabiWise favicon">
+  <defs>
+    <linearGradient id="house" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B2A6F"/>
+      <stop offset="1" stop-color="#16B8B0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <path d="M16 28L32 14l16 14" fill="none" stroke="url(#house)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20 26v22h24V26" fill="none" stroke="url(#house)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="28" y="27" width="4.6" height="4.6" rx="1" fill="#0B2A6F"/>
+  <rect x="35.4" y="27" width="4.6" height="4.6" rx="1" fill="#16B8B0"/>
+  <rect x="28" y="34.4" width="4.6" height="4.6" rx="1" fill="#0B2A6F"/>
+  <rect x="35.4" y="34.4" width="4.6" height="4.6" rx="1" fill="#16B8B0"/>
+  <circle cx="25" cy="41" r="4" fill="#0B2A6F"/>
+  <circle cx="39" cy="41" r="4" fill="#16B8B0"/>
+</svg>
