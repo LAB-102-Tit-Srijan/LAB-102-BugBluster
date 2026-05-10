@@ -13,6 +13,7 @@ import RoommateMatchPage from "./pages/RoommateMatchPage";
 import RoommateResultsPage from "./pages/RoommateResultsPage";
 import ExpenseDashboard from "./pages/ExpenseDashboard";
 import MaintenancePage from "./pages/MaintenancePage";
+import SafetyPage from "./pages/SafetyPage";
 import PostPropertyPage from "./pages/PostPropertyPage";
 import { seedPropertiesIfEmpty } from "./utils/seedProperties";
 
@@ -43,6 +44,7 @@ export default function App() {
       <Route path="/roommate-results" element={<ProtectedRoute><RoommateResultsPage /></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><ExpenseDashboard /></ProtectedRoute>} />
       <Route path="/maintenance" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
+      <Route path="/safety" element={<ProtectedRoute><SafetyPage /></ProtectedRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

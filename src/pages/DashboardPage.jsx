@@ -17,7 +17,7 @@ const sidebarLinks = [
   { icon: "🧬", label: "Roommate Match", href: "/roommate-match" },
   { icon: "💸", label: "Expenses", href: "/expenses" },
   { icon: "🛠", label: "Maintenance", href: "/maintenance" },
-  { icon: "🛡", label: "Safety", href: "/maintenance" },
+  { icon: "🛡", label: "Safety", href: "/safety" },
 ];
 
 const quickActions = [
@@ -222,6 +222,29 @@ export default function DashboardPage() {
                     <p className="text-sm text-slate-400">{stat.label}</p>
                     <p className="mt-4 text-3xl font-black text-white">{stat.value}</p>
                   </div>
+                ))}
+              </div>
+
+              {/* Quick actions */}
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {quickActions.concat([{ label: 'Safety SOS', href: '/safety' }]).map((action) => (
+                  <Link
+                    key={action.label}
+                    to={action.href}
+                    className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-left hover:bg-slate-800 transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{action.label}</p>
+                        <p className="text-xs text-slate-400 mt-1">Go to {action.label}</p>
+                      </div>
+                      {action.label === 'Safety SOS' ? (
+                        <div className="rounded-full bg-red-600 px-3 py-2 text-white font-bold">🚨</div>
+                      ) : (
+                        <div className="rounded-full bg-amber-500 px-3 py-2 text-black font-semibold">→</div>
+                      )}
+                    </div>
+                  </Link>
                 ))}
               </div>
             </section>

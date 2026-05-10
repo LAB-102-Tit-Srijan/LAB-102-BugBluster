@@ -40,6 +40,12 @@ export default function Navbar() {
                 <Link to="/dashboard" className="font-medium text-slate-300 hover:text-indigo-300">
                   Dashboard
                 </Link>
+                <Link to="/maintenance" className="font-medium text-slate-300 hover:text-indigo-300">
+                  Maintenance
+                </Link>
+                <Link to="/safety" className="font-medium text-slate-300 hover:text-indigo-300">
+                  Safety
+                </Link>
                 <ConnectionBell />
                 <span className="text-slate-400">{currentUser.email}</span>
                 <button
@@ -104,6 +110,20 @@ export default function Navbar() {
                     className="rounded-lg px-3 py-2 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-indigo-300"
                   >
                     Dashboard
+                  </Link>
+                  <Link
+                    to="/maintenance"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg px-3 py-2 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-indigo-300"
+                  >
+                    Maintenance
+                  </Link>
+                  <Link
+                    to="/safety"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg px-3 py-2 font-medium text-slate-300 transition hover:bg-slate-800 hover:text-indigo-300"
+                  >
+                    Safety
                   </Link>
                   <span className="px-3 py-2 text-slate-400">{currentUser.email}</span>
                   <button
