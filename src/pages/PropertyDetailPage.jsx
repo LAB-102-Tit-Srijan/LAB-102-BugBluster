@@ -2,7 +2,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import Navbar from "../components/Navbar";
-import { properties } from "../data/properties";
 import { useAuth } from "../context/AuthContext";
 import { calculateTrustScore, getTrustTier } from "../utils/trustScore";
 import { calculateBookingFee, calculateDepositFee } from "../utils/feeCalculator";
@@ -86,11 +85,6 @@ export default function PropertyDetailPage() {
         const demoProperties = JSON.parse(localStorage.getItem("habiwise_demo_properties") || "[]");
         fallback = demoProperties.find((item) => String(item.id) === String(id));
       } catch {}
-
-      // Fallback to static data
-      if (!fallback) {
-        fallback = properties.find((item) => String(item.id) === String(id));
-      }
 
       if (active) {
         setProperty(normalizeProperty(fallback));

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { collection, getDocs, limit, query } from "firebase/firestore";
 import { isFirebaseConfigured } from "../firebase/config";
 import PropertyCard from "../components/PropertyCard";
 import MatchCard from "../components/MatchCard";
@@ -7,8 +8,7 @@ import SharedPods from "../components/SharedPods";
 import MyConnections from "../components/MyConnections";
 import MyMatches from "../components/MyMatches";
 import { useAuth } from "../context/AuthContext";
-import { candidates } from "../data/candidates";
-import { properties } from "../data/properties";
+import { db } from "../firebase/config";
 import { calculateTrustScore, getTrustImprovementItems, getTrustTier } from "../utils/trustScore";
 
 const sidebarLinks = [
@@ -52,6 +52,8 @@ export default function DashboardPage() {
   const [showTrustHelp, setShowTrustHelp] = useState(false);
   const [toast, setToast] = useState("");
   const [impactProgress, setImpactProgress] = useState(0);
+  const [recommendedProperties, setRecommendedProperties] = useState([]);
+  const [roommateMatches, setRoommateMatches] = useState([]);
 
   const localProfile = useMemo(() => {
     if (typeof window === "undefined") {
@@ -105,6 +107,32 @@ export default function DashboardPage() {
     return () => window.cancelAnimationFrame(animationFrameId);
   }, []);
 
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!isFirebaseConfigured || !db) {
+        setRecommendedProperties([]);
+        setRoommateMatches([]);
+        return;
+      }
+
+      try {
+        const [propertiesSnapshot, candidatesSnapshot] = await Promise.all([
+          getDocs(query(collection(db, "properties"), limit(3))),
+          getDocs(query(collection(db, "roommate_preferences"), limit(2))),
+        ]);
+
+        setRecommendedProperties(propertiesSnapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() })));
+        setRoommateMatches(candidatesSnapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() })));
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+        setRecommendedProperties([]);
+        setRoommateMatches([]);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
   const impactStats = [
     { label: "Brokerage saved", target: 24000000, format: (value) => `₹${(value / 10000000).toFixed(1)}Cr` },
     { label: "Happy users", target: 12400, format: (value) => `${value.toLocaleString("en-IN")}+` },
@@ -116,8 +144,6 @@ export default function DashboardPage() {
     window.setTimeout(() => setToast(""), 1800);
   };
 
-  const recommendedProperties = properties.slice(0, 3);
-  const roommateMatches = candidates.slice(0, 2);
   const roleSectionItems = isProfessional ? professionalStays : studentColleges;
 
   return (

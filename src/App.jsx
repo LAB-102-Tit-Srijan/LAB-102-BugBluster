@@ -15,14 +15,14 @@ import ExpenseDashboard from "./pages/ExpenseDashboard";
 import MaintenancePage from "./pages/MaintenancePage";
 import SafetyPage from "./pages/SafetyPage";
 import PostPropertyPage from "./pages/PostPropertyPage";
-import { seedPropertiesIfEmpty } from "./utils/seedProperties";
+import { seedDemoData } from "./utils/seedData";
 
 export default function App() {
   const { currentUser, loading } = useAuth();
 
   useEffect(() => {
-    seedPropertiesIfEmpty().catch((error) => {
-      console.error("Unable to seed properties:", error);
+    seedDemoData().catch((error) => {
+      console.error("Unable to seed demo data:", error);
     });
   }, []);
 

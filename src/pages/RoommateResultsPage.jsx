@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { candidates } from "../data/candidates";
 import { getTopMatches } from "../utils/matchingLogic";
 import SharedPods from "../components/SharedPods";
 import { FEE_CONFIG } from "../utils/feeCalculator";

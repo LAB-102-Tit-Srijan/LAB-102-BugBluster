@@ -19,7 +19,6 @@ import {
   getSharedInterests,
   getTopMatches,
 } from "../utils/matchingLogic";
-import { candidates } from "../data/candidates";
 
 const INTERESTS_OPTIONS = ["Coding", "Gym", "Startup", "Music", "Gaming", "UPSC", "Reading", "Travel"];
 const STREAM_OPTIONS = ["CSE", "ECE", "MBA", "Law", "Medical", "Commerce", "Arts", "Other"];
@@ -179,6 +178,7 @@ export default function RoommateMatchPage() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [noMatchesMessage, setNoMatchesMessage] = useState("");
+  const [firestoreCandidates, setFirestoreCandidates] = useState([]);
 
   const totalSteps = 6;
   const progressPercent = (currentStep / totalSteps) * 100;
@@ -336,6 +336,25 @@ export default function RoommateMatchPage() {
       active = false;
     };
   }, [currentUser?.uid, location.search]);
+
+  useEffect(() => {
+    const loadCandidates = async () => {
+      if (!isFirebaseConfigured || !db) {
+        setFirestoreCandidates([]);
+        return;
+      }
+
+      try {
+        const snapshot = await getDocs(collection(db, "roommate_preferences"));
+        setFirestoreCandidates(snapshot.docs.map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() })));
+      } catch (error) {
+        console.error("Failed to load roommate preferences:", error);
+        setFirestoreCandidates([]);
+      }
+    };
+
+    loadCandidates();
+  }, []);
 
   const flashToast = (message) => {
     setToast(message);
@@ -505,7 +524,7 @@ export default function RoommateMatchPage() {
         isProfileSaved: true,
       });
 
-      const fallbackMatches = getTopMatches(savedProfile || formData, candidates);
+      const fallbackMatches = getTopMatches(savedProfile || formData, firestoreCandidates);
       navigate("/roommate-results", {
         state: {
           matches: fallbackMatches,
