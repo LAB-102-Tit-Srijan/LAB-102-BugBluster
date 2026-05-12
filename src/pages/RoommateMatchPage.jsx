@@ -122,7 +122,7 @@ const fromSavedProfileToForm = (profile = {}) => ({
   cleanliness: normalizeToken(profile.cleanliness),
   foodPreference: normalizeToken(profile.foodPreference),
   socialHabits: normalizeToken(profile.socialHabits),
-  interests: Array.isArray(profile.interests) ? profile.interests : [],
+  interests: Array.isArray(profile.interests) ? profile.interests.map((item) => titleCase(item)) : [],
   budget: Number(profile.budget || 9000),
   situation: normalizeToken(profile.situation),
   college: profile.college || "",
@@ -172,9 +172,12 @@ export default function RoommateMatchPage() {
   const [savedProfile, setSavedProfile] = useState(null);
   const [showQuiz, setShowQuiz] = useState(true);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
+  const [quickEditData, setQuickEditData] = useState(initialFormData);
   const [selectedCity, setSelectedCity] = useState("Indore");
   const [selectedArea, setSelectedArea] = useState("");
   const [isFindingMatches, setIsFindingMatches] = useState(false);
+  const [isSavingQuickEdit, setIsSavingQuickEdit] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [noMatchesMessage, setNoMatchesMessage] = useState("");
@@ -361,6 +364,29 @@ export default function RoommateMatchPage() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
+  const openQuickEdit = () => {
+    if (!savedProfile) return;
+    setQuickEditData(fromSavedProfileToForm(savedProfile));
+    setShowQuickEdit(true);
+  };
+
+  const closeQuickEdit = () => {
+    setShowQuickEdit(false);
+  };
+
+  const updateQuickField = (key, value) => {
+    setQuickEditData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleQuickInterest = (interest) => {
+    setQuickEditData((prev) => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter((item) => item !== interest)
+        : [...prev.interests, interest],
+    }));
+  };
+
   const toggleInterest = (interest) => {
     setFormData((prev) => ({
       ...prev,
@@ -432,9 +458,9 @@ export default function RoommateMatchPage() {
     }
   };
 
-  const handleSaveLifestyleProfile = async () => {
+  const handleSaveLifestyleProfile = async (profileFormData = formData) => {
     const lifestyleProfile = buildLifestyleProfile(
-      formData,
+      profileFormData,
       savedProfile?.preferredCity || selectedCity || "",
       savedProfile?.area || selectedArea || ""
     );
@@ -479,6 +505,35 @@ export default function RoommateMatchPage() {
     );
 
     return lifestyleProfile;
+  };
+
+  const handleQuickResave = async () => {
+    setError("");
+
+    if (
+      !quickEditData.sleepSchedule ||
+      !quickEditData.cleanliness ||
+      !quickEditData.foodPreference ||
+      !quickEditData.socialHabits ||
+      !quickEditData.interests.length
+    ) {
+      setError("Please keep all lifestyle fields selected before resaving.");
+      return;
+    }
+
+    setIsSavingQuickEdit(true);
+
+    try {
+      const nextProfile = await handleSaveLifestyleProfile(quickEditData);
+      setSavedProfile(nextProfile);
+      setFormData(fromSavedProfileToForm(nextProfile));
+      setShowQuickEdit(false);
+      flashToast("Lifestyle updated and saved.");
+    } catch (saveError) {
+      setError(saveError?.message || "Could not update your lifestyle profile.");
+    } finally {
+      setIsSavingQuickEdit(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -744,7 +799,142 @@ export default function RoommateMatchPage() {
                 >
                   ✏️ Update My Profile
                 </button>
+
+                <button
+                  type="button"
+                  onClick={openQuickEdit}
+                  className="text-sm font-semibold text-slate-300 hover:text-slate-100"
+                >
+                  Quick Edit Lifestyle
+                </button>
               </div>
+
+              {showQuickEdit && (
+                <div className="mt-6 space-y-5 rounded-2xl border border-slate-700 bg-slate-950/70 p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white">Edit lifestyle preferences</h3>
+                    <button
+                      type="button"
+                      onClick={closeQuickEdit}
+                      className="text-xs font-semibold text-slate-400 hover:text-slate-200"
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Sleep</p>
+                      <select
+                        value={quickEditData.sleepSchedule}
+                        onChange={(e) => updateQuickField("sleepSchedule", e.target.value)}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-amber-500"
+                      >
+                        <option value="">Select</option>
+                        <option value="early_bird">Early Bird</option>
+                        <option value="night_owl">Night Owl</option>
+                        <option value="flexible">Flexible</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Cleanliness</p>
+                      <select
+                        value={quickEditData.cleanliness}
+                        onChange={(e) => updateQuickField("cleanliness", e.target.value)}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-amber-500"
+                      >
+                        <option value="">Select</option>
+                        <option value="very_clean">Very Clean</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="relaxed">Relaxed</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Food</p>
+                      <select
+                        value={quickEditData.foodPreference}
+                        onChange={(e) => updateQuickField("foodPreference", e.target.value)}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-amber-500"
+                      >
+                        <option value="">Select</option>
+                        <option value="veg">Veg</option>
+                        <option value="non_veg">Non-Veg</option>
+                        <option value="both">Both</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Social</p>
+                      <select
+                        value={quickEditData.socialHabits}
+                        onChange={(e) => updateQuickField("socialHabits", e.target.value)}
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-amber-500"
+                      >
+                        <option value="">Select</option>
+                        <option value="introvert">Introvert</option>
+                        <option value="extrovert">Extrovert</option>
+                        <option value="mixed">Mixed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Interests</p>
+                    <div className="flex flex-wrap gap-2">
+                      {INTERESTS_OPTIONS.map((interest) => (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => toggleQuickInterest(interest)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                            quickEditData.interests.includes(interest)
+                              ? "border-amber-400 bg-amber-400/20 text-amber-300"
+                              : "border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-500"
+                          }`}
+                        >
+                          {interest}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Budget</p>
+                      <p className="text-sm font-bold text-amber-300">INR {Number(quickEditData.budget || 0).toLocaleString("en-IN")}</p>
+                    </div>
+                    <input
+                      type="range"
+                      min="3000"
+                      max="15000"
+                      step="500"
+                      value={Number(quickEditData.budget || 9000)}
+                      onChange={(e) => updateQuickField("budget", Number(e.target.value))}
+                      className="w-full cursor-pointer accent-amber-400"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleQuickResave}
+                      disabled={isSavingQuickEdit}
+                      className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-black text-black transition hover:bg-amber-400 disabled:opacity-70"
+                    >
+                      {isSavingQuickEdit ? "Saving..." : "Resave Lifestyle"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeQuickEdit}
+                      className="text-sm font-semibold text-slate-400 hover:text-slate-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {noMatchesMessage && (
                 <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
