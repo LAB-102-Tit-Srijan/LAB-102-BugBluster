@@ -343,7 +343,13 @@ export default function RoommateMatchPage() {
   useEffect(() => {
     const loadCandidates = async () => {
       if (!isFirebaseConfigured || !db) {
-        setFirestoreCandidates([]);
+        // Demo mode: load from localStorage
+        try {
+          const demoCandidates = JSON.parse(localStorage.getItem("habiwise_demo_candidates") || "[]");
+          setFirestoreCandidates(demoCandidates);
+        } catch {
+          setFirestoreCandidates([]);
+        }
         return;
       }
 
@@ -579,7 +585,17 @@ export default function RoommateMatchPage() {
         isProfileSaved: true,
       });
 
-      const fallbackMatches = getTopMatches(savedProfile || formData, firestoreCandidates);
+      // Filter demo candidates by city before getting top matches
+      const candidatesByCity = firestoreCandidates.filter((candidate) => candidate.city === selectedCity);
+
+      if (candidatesByCity.length === 0) {
+        setNoMatchesMessage(
+          `No matches in ${selectedCity} yet. Be the first! Share HabiWise with your friends 🚀`
+        );
+        return;
+      }
+
+      const fallbackMatches = getTopMatches(localProfile, candidatesByCity);
       navigate("/roommate-results", {
         state: {
           matches: fallbackMatches,

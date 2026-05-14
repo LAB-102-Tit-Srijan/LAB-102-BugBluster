@@ -24,7 +24,18 @@ export default function RoommateResultsPage() {
   useEffect(() => {
     // Calculate matches after 2 seconds to show the animation
     const timer = setTimeout(() => {
-      const topMatches = presetMatches || getTopMatches(userPrefs, candidates);
+      let topMatches = presetMatches;
+
+      if (!topMatches) {
+        // Load demo candidates if not preset
+        try {
+          const demoCandidates = JSON.parse(localStorage.getItem("habiwise_demo_candidates") || "[]");
+          topMatches = getTopMatches(userPrefs, demoCandidates);
+        } catch {
+          topMatches = [];
+        }
+      }
+
       setMatches(topMatches);
       setIsCalculating(false);
     }, 2000);

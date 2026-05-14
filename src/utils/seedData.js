@@ -395,10 +395,24 @@ const seedLocalDemoProperties = () => {
   }
 };
 
+const seedLocalDemoCandidates = () => {
+  try {
+    const existingCandidates = JSON.parse(localStorage.getItem("habiwise_demo_candidates" || "[]"));
+    if (existingCandidates.length > 0) {
+      return;
+    }
+
+    localStorage.setItem("habiwise_demo_candidates", JSON.stringify(candidatesData));
+  } catch {
+    // Ignore localStorage failures and let the UI fall back to empty state.
+  }
+};
+
 export const seedDemoData = async (dbParam) => {
   const database = dbParam || db;
 
   seedLocalDemoProperties();
+  seedLocalDemoCandidates();
 
   if (!isFirebaseConfigured || !database) return;
 
