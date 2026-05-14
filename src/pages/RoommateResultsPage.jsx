@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Navbar from "../components/Navbar";
 import { getTopMatches } from "../utils/matchingLogic";
 import SharedPods from "../components/SharedPods";
 import { FEE_CONFIG } from "../utils/feeCalculator";
 import { createConnection } from "../utils/connectionHelpers";
 import { useAuth } from "../context/AuthContext";
+import { db, isFirebaseConfigured } from "../firebase/config";
 
 export default function RoommateResultsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const userPrefs = location.state?.userPrefs || location.state || {};
   const cityLabel = location.state?.city || "";
@@ -20,6 +24,7 @@ export default function RoommateResultsPage() {
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [connectionCreating, setConnectionCreating] = useState(false);
+  const [chatIdsByCandidateId, setChatIdsByCandidateId] = useState({});
 
   useEffect(() => {
     // Calculate matches after 2 seconds to show the animation
@@ -42,6 +47,42 @@ export default function RoommateResultsPage() {
 
     return () => clearTimeout(timer);
   }, [presetMatches, userPrefs]);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return undefined;
+
+    if (!isFirebaseConfigured || !db) {
+      try {
+        const state = JSON.parse(localStorage.getItem("habiwise_demo_chats") || "{\"chats\":[]}");
+        const lookup = {};
+        state.chats
+          .filter((chat) => Array.isArray(chat.participants) && chat.participants.includes(currentUser.uid))
+          .forEach((chat) => {
+            const otherId = chat.participants.find((participant) => participant !== currentUser.uid);
+            if (otherId) lookup[otherId] = chat.chatId;
+          });
+        setChatIdsByCandidateId(lookup);
+      } catch {
+        setChatIdsByCandidateId({});
+      }
+      return undefined;
+    }
+
+    const unsubscribe = onSnapshot(
+      query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid)),
+      (snapshot) => {
+        const lookup = {};
+        snapshot.docs.forEach((chatSnapshot) => {
+          const chatData = chatSnapshot.data();
+          const otherId = (chatData.participants || []).find((participant) => participant !== currentUser.uid);
+          if (otherId) lookup[otherId] = chatSnapshot.id;
+        });
+        setChatIdsByCandidateId(lookup);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
 
   return (
     <>
@@ -89,6 +130,8 @@ export default function RoommateResultsPage() {
                     key={candidate.id}
                     candidate={candidate}
                     index={idx}
+                    chatId={chatIdsByCandidateId[candidate.userId || candidate.id] || ""}
+                    onOpenChat={(chatId) => navigate(`/chat/${chatId}`)}
                     onConnect={() => {
                       setSelectedCandidate(candidate);
                       setShowFeeModal(true);
@@ -224,7 +267,7 @@ export default function RoommateResultsPage() {
 /**
  * MatchCard Component with Animated Compatibility
  */
-function MatchCard({ candidate, index, onConnect }) {
+function MatchCard({ candidate, index, onConnect, chatId, onOpenChat }) {
   const [displayedCompatibility, setDisplayedCompatibility] = useState(0);
 
   // Animate the compatibility percentage counting up
@@ -357,13 +400,23 @@ function MatchCard({ candidate, index, onConnect }) {
       </div>
 
       {/* Connect Button */}
-      <button
-        type="button"
-        onClick={onConnect}
-        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2 font-black text-black transition-all duration-300 ease-out hover:-translate-y-0.5 hover:from-amber-300 hover:to-amber-400"
-      >
-        💬 Connect
-      </button>
+      {chatId ? (
+        <button
+          type="button"
+          onClick={() => onOpenChat(chatId)}
+          className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2 font-black text-black transition-all duration-300 ease-out hover:-translate-y-0.5 hover:from-amber-300 hover:to-amber-400"
+        >
+          💬 Message {candidate.name.split(" ")[0]}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onConnect}
+          className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2 font-black text-black transition-all duration-300 ease-out hover:-translate-y-0.5 hover:from-amber-300 hover:to-amber-400"
+        >
+          💬 Connect
+        </button>
+      )}
     </div>
   );
 }

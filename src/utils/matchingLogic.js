@@ -1,22 +1,23 @@
 /**
  * Calculate compatibility score between user preferences and a candidate
- * Scoring:
+ * Scoring Formula:
  *  - Same sleep schedule: +25 pts
  *  - Same cleanliness: +20 pts
  *  - Same food preference: +20 pts
  *  - Same social habits: +20 pts
  *  - Budget within ₹2000: +15 pts
- *  - Each shared interest: +10 pts (max 2 interests = +20)
- * Total base: 120 pts → normalize to 100%
+ *  - Shared interests (1+): +5 pts, (2+): +10 pts
+ *  - Same situation: +10 pts
+ *  - Same stay duration: +10 pts
+ * Total max: 100 pts (capped)
  */
 export function calculateCompatibility(userPrefs, candidate) {
   let score = 0;
-  const maxScore = 120;
 
   const normalizeValue = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
   const isSame = (left, right) => normalizeValue(left) === normalizeValue(right);
 
-  // Sleep schedule match (+25)
+  // Core Parameters: Sleep schedule match (+25)
   if (isSame(userPrefs.sleepSchedule, candidate.sleepSchedule)) {
     score += 25;
   }
@@ -37,68 +38,71 @@ export function calculateCompatibility(userPrefs, candidate) {
   }
 
   // Budget within ₹2000 (+15)
-  const budgetDiff = Math.abs(userPrefs.budget - candidate.budget);
+  const budgetDiff = Math.abs((userPrefs.budget || 0) - (candidate.budget || 0));
   if (budgetDiff <= 2000) {
     score += 15;
   }
 
-  // Shared interests (+10 per interest, max 2 = +20)
+  // Shared interests bonus
   if (userPrefs.interests && userPrefs.interests.length > 0) {
     const candidateInterests = (candidate.interests || []).map((interest) => normalizeValue(interest));
     const sharedInterests = userPrefs.interests.filter((interest) =>
       candidateInterests.includes(normalizeValue(interest))
     );
-    const interestBonus = Math.min(sharedInterests.length * 10, 20);
-    score += interestBonus;
+    // Shared interests: 1+ → +5, 2+ → +10
+    if (sharedInterests.length >= 2) {
+      score += 10;
+    } else if (sharedInterests.length >= 1) {
+      score += 5;
+    }
   }
 
-  // Normalize to 100% (0-120 → 0-100)
-  let compatibility = Math.round((score / maxScore) * 100);
-
-  const myExamPrep = Array.isArray(userPrefs.examPrep)
-    ? userPrefs.examPrep.find((item) => item !== "None") || ""
-    : userPrefs.examPrep || "";
-  const candidateExamPrep = candidate.examPrep || "";
-
-  // Situation matching (bonus points)
-  if (userPrefs.situation && isSame(userPrefs.situation, candidate.situation)) {
-    compatibility += 10;
+  // Same situation bonus (+10)
+  if (userPrefs.situation && candidate.situation && isSame(userPrefs.situation, candidate.situation)) {
+    score += 10;
   }
 
-  if (
-    userPrefs.college &&
-    candidate.college &&
-    userPrefs.college.toLowerCase() === candidate.college.toLowerCase()
-  ) {
-    compatibility += 15;
-  }
-
-  if (myExamPrep && candidateExamPrep && isSame(myExamPrep, candidateExamPrep)) {
-    compatibility += 10;
-  }
-
+  // Same stay duration bonus (+10)
   if (userPrefs.stayDuration && candidate.stayDuration && isSame(userPrefs.stayDuration, candidate.stayDuration)) {
-    compatibility += 10;
+    score += 10;
   }
 
-  return Math.min(compatibility, 100);
+  // Cap at 100 and return as percentage
+  return Math.min(score, 100);
 }
 
 /**
- * Determine conflict risk based on differences
+ * Determine conflict risk based on parameter mismatches
+ * Counts conflicts in core areas:
+ *  - Sleep schedule mismatch
+ *  - Cleanliness mismatch
+ *  - Social habits mismatch
+ *
+ * Returns: "Low" (0-1 conflicts), "Medium" (2 conflicts), "High" (3+ conflicts)
  */
 export function getConflictRisk(userPrefs, candidate) {
   let conflicts = 0;
   const normalizeValue = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+  const isSame = (left, right) => normalizeValue(left) === normalizeValue(right);
 
-  // Count mismatches
-  if (normalizeValue(userPrefs.sleepSchedule) !== normalizeValue(candidate.sleepSchedule)) conflicts++;
-  if (normalizeValue(userPrefs.cleanliness) !== normalizeValue(candidate.cleanliness)) conflicts++;
-  if (normalizeValue(userPrefs.foodPreference) !== normalizeValue(candidate.foodPreference)) conflicts++;
-  if (normalizeValue(userPrefs.socialHabits) !== normalizeValue(candidate.socialHabits)) conflicts++;
+  // Count core mismatches
+  if (!isSame(userPrefs.sleepSchedule, candidate.sleepSchedule)) {
+    conflicts++;
+  }
+  if (!isSame(userPrefs.cleanliness, candidate.cleanliness)) {
+    conflicts++;
+  }
+  if (!isSame(userPrefs.socialHabits, candidate.socialHabits)) {
+    conflicts++;
+  }
 
-  if (conflicts === 0) return "Low";
-  if (conflicts === 1 || conflicts === 2) return "Medium";
+  // Return risk level based on conflict count
+  if (conflicts === 0 || conflicts === 1) {
+    return "Low";
+  }
+  if (conflicts === 2) {
+    return "Medium";
+  }
   return "High";
 }
 

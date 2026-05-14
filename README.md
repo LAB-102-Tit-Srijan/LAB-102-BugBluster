@@ -111,6 +111,6 @@ HabiWise/
 - Platform Integration: Firebase, routing, and deployment setup
 
 ## 🔗 Live Demo
-Live demo URL: https://your-habiwise-vercel-deployment.vercel.app
+Live demo URL: https://lab-102-bug-bluster.vercel.app/
 
 If you share the final Vercel URL, replace the placeholder above with the live production link.

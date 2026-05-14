@@ -7,6 +7,7 @@ import MatchCard from "../components/MatchCard";
 import SharedPods from "../components/SharedPods";
 import MyConnections from "../components/MyConnections";
 import MyMatches from "../components/MyMatches";
+import ChatList from "../components/ChatList";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase/config";
 import { calculateTrustScore, getTrustImprovementItems, getTrustTier } from "../utils/trustScore";
@@ -200,7 +201,6 @@ export default function DashboardPage() {
                 className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
               >
                 <span>{link.label}</span>
-                <span className="text-xs text-slate-500">Open</span>
               </Link>
             ))}
           </nav>
@@ -381,6 +381,8 @@ export default function DashboardPage() {
 
             <section className="mt-7 grid grid-cols-1 gap-6 xl:grid-cols-3">
               <div className="space-y-6 xl:col-span-2">
+                <ChatList />
+
                 <div className="rounded-3xl border border-slate-800 bg-slate-950/60 p-5 sm:p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold leading-none text-white">Recommended Properties</h2>

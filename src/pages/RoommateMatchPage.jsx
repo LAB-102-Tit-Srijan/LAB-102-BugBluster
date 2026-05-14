@@ -11,6 +11,7 @@ import {
   where,
 } from "firebase/firestore";
 import Navbar from "../components/Navbar";
+import CitySelector from "../components/CitySelector";
 import { useAuth } from "../context/AuthContext";
 import { db, isFirebaseConfigured } from "../firebase/config";
 import {
@@ -23,7 +24,6 @@ import {
 const INTERESTS_OPTIONS = ["Coding", "Gym", "Startup", "Music", "Gaming", "UPSC", "Reading", "Travel"];
 const STREAM_OPTIONS = ["CSE", "ECE", "MBA", "Law", "Medical", "Commerce", "Arts", "Other"];
 const EXAM_OPTIONS = ["UPSC", "CAT", "GATE", "JEE", "CA", "NEET", "None"];
-const CITY_OPTIONS = ["Indore", "Pune", "Bengaluru"];
 const DEMO_USER_KEY = "habiwise_demo_user";
 const DEMO_USERS_KEY = "habiwise_demo_users";
 
@@ -585,9 +585,11 @@ export default function RoommateMatchPage() {
         isProfileSaved: true,
       });
 
-      // Filter demo candidates by city before getting top matches
-      const candidatesByCity = firestoreCandidates.filter((candidate) => candidate.city === selectedCity);
 
+      // Filter demo candidates by city before getting top matches
+      const candidatesByCity = firestoreCandidates.filter((candidate) => 
+        (candidate.city || "").toLowerCase() === selectedCity.toLowerCase()
+      );
       if (candidatesByCity.length === 0) {
         setNoMatchesMessage(
           `No matches in ${selectedCity} yet. Be the first! Share HabiWise with your friends 🚀`
@@ -771,21 +773,14 @@ export default function RoommateMatchPage() {
               <div className="mt-6 space-y-4 rounded-2xl border border-slate-700 bg-slate-950/60 p-4">
                 <p className="text-sm font-semibold text-slate-200">Just select your location:</p>
 
-                <select
+
+                <CitySelector
                   value={selectedCity}
-                  onChange={(e) => {
-                    setSelectedCity(e.target.value);
+                  onChange={(city) => {
+                    setSelectedCity(city);
                     setNoMatchesMessage("");
                   }}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-[#F5A623]"
-                >
-                  {CITY_OPTIONS.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-
+                />
                 <input
                   type="text"
                   value={selectedArea}

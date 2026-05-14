@@ -11,6 +11,7 @@ import ListingsPage from "./pages/ListingsPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
 import RoommateMatchPage from "./pages/RoommateMatchPage";
 import RoommateResultsPage from "./pages/RoommateResultsPage";
+import Chat from "./pages/Chat";
 import ExpenseDashboard from "./pages/ExpenseDashboard";
 import MaintenancePage from "./pages/MaintenancePage";
 import SafetyPage from "./pages/SafetyPage";
@@ -42,6 +43,7 @@ export default function App() {
       <Route path="/property/:id" element={<ProtectedRoute><PropertyDetailPage /></ProtectedRoute>} />
       <Route path="/roommate-match" element={<ProtectedRoute><RoommateMatchPage /></ProtectedRoute>} />
       <Route path="/roommate-results" element={<ProtectedRoute><RoommateResultsPage /></ProtectedRoute>} />
+      <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><ExpenseDashboard /></ProtectedRoute>} />
       <Route path="/maintenance" element={<ProtectedRoute><MaintenancePage /></ProtectedRoute>} />
       <Route path="/safety" element={<ProtectedRoute><SafetyPage /></ProtectedRoute>} />

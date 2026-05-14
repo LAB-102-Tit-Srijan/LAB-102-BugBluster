@@ -1,5 +1,6 @@
-import { collection, addDoc, updateDoc, doc, serverTimestamp, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, serverTimestamp, query, where, orderBy, onSnapshot, getDoc } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "../firebase/config";
+import { ensureChatForConnection } from "./chatHelpers";
 
 /**
  * Create a connection request in Firestore or localStorage
@@ -49,6 +50,13 @@ export const updateConnectionStatus = async (connectionId, status) => {
         conn.id === connectionId ? { ...conn, status, updatedAt: new Date().toISOString() } : conn
       );
       localStorage.setItem("habiwise_connections", JSON.stringify(updated));
+
+      if (status === "liked") {
+        const connection = updated.find((conn) => conn.id === connectionId);
+        if (connection) {
+          await ensureChatForConnection(connectionId, connection);
+        }
+      }
     } catch (error) {
       console.error("Failed to update connection locally:", error);
     }
@@ -56,10 +64,18 @@ export const updateConnectionStatus = async (connectionId, status) => {
   }
 
   try {
+    const connectionRef = doc(db, "connections", connectionId);
+    const connectionSnapshot = await getDoc(connectionRef);
+    const connectionData = connectionSnapshot.exists() ? connectionSnapshot.data() : {};
+
     await updateDoc(doc(db, "connections", connectionId), {
       status,
       updatedAt: serverTimestamp(),
     });
+
+    if (status === "liked") {
+      await ensureChatForConnection(connectionId, connectionData);
+    }
   } catch (error) {
     console.error("Failed to update connection:", error);
   }

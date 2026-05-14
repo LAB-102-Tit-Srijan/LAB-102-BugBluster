@@ -3,9 +3,11 @@ import {
   getDocs,
   query,
   limit,
+  where,
   writeBatch,
   doc,
   serverTimestamp,
+  addDoc,
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "../firebase/config";
 
@@ -229,14 +231,15 @@ const propertiesData = [
   },
 ];
 
-// Candidates data (4 roommates)
+// Candidates data (4 roommates - demo data seeded to Firestore)
 const candidatesData = [
   {
-    userId: "demo_priya",
+    userId: "demo_priya_001",
     name: "Priya Sharma",
     age: 21,
     college: "BITS Pilani",
-    city: "Indore",
+    city: "Pune",
+    area: "Koregaon Park",
     role: "student",
     sleepSchedule: "night_owl",
     cleanliness: "very_clean",
@@ -246,41 +249,21 @@ const candidatesData = [
     interests: ["Coding", "Reading", "UPSC"],
     flatmateDNA: "Focused Introvert",
     situation: "student",
-    stayDuration: "long_term",
+    stayDuration: "short_term",
     avatar: "PS",
     avatarColor: "#8B5CF6",
     contactPhone: "+91 98765 43210",
     contactEmail: "priya.sharma@bits.ac.in",
     isDemo: true,
+    verified: true,
   },
   {
-    userId: "demo_arjun",
-    name: "Arjun Mehta",
-    age: 23,
-    company: "Infosys",
-    city: "Pune",
-    role: "professional",
-    sleepSchedule: "early_bird",
-    cleanliness: "moderate",
-    foodPreference: "non_veg",
-    socialHabits: "extrovert",
-    budget: 10000,
-    interests: ["Gym", "Startup", "Travel"],
-    flatmateDNA: "Social Hustler",
-    situation: "employee",
-    stayDuration: "long_term",
-    avatar: "AM",
-    avatarColor: "#F5A623",
-    contactPhone: "+91 87654 32109",
-    contactEmail: "arjun.mehta@infosys.com",
-    isDemo: true,
-  },
-  {
-    userId: "demo_sneha",
+    userId: "demo_sneha_001",
     name: "Sneha Patel",
     age: 22,
     college: "VIT Pune",
     city: "Pune",
+    area: "Hinjewadi",
     role: "student",
     sleepSchedule: "flexible",
     cleanliness: "very_clean",
@@ -296,13 +279,39 @@ const candidatesData = [
     contactPhone: "+91 76543 21098",
     contactEmail: "sneha.patel@vit.edu",
     isDemo: true,
+    verified: true,
   },
   {
-    userId: "demo_rohit",
+    userId: "demo_arjun_001",
+    name: "Arjun Mehta",
+    age: 23,
+    company: "Infosys",
+    city: "Pune",
+    area: "Wakad",
+    role: "professional",
+    sleepSchedule: "early_bird",
+    cleanliness: "moderate",
+    foodPreference: "non_veg",
+    socialHabits: "extrovert",
+    budget: 10000,
+    interests: ["Gym", "Startup", "Travel"],
+    flatmateDNA: "Social Hustler",
+    situation: "employee",
+    stayDuration: "long_term",
+    avatar: "AM",
+    avatarColor: "#F5A623",
+    contactPhone: "+91 87654 32109",
+    contactEmail: "arjun.mehta@infosys.com",
+    isDemo: true,
+    verified: true,
+  },
+  {
+    userId: "demo_rohit_001",
     name: "Rohit Kumar",
     age: 24,
     company: "TCS",
-    city: "Indore",
+    city: "Pune",
+    area: "Baner",
     role: "professional",
     sleepSchedule: "night_owl",
     cleanliness: "relaxed",
@@ -318,6 +327,7 @@ const candidatesData = [
     contactPhone: "+91 65432 10987",
     contactEmail: "rohit.kumar@tcs.com",
     isDemo: true,
+    verified: true,
   },
 ];
 
@@ -434,20 +444,23 @@ export const seedDemoData = async (dbParam) => {
   }
 
   // Candidates / roommate preferences
+  // Only add if demo candidates don't exist yet
   const candRef = collection(database, "roommate_preferences");
-  const existingCand = await getDocs(query(candRef, limit(1)));
-  if (existingCand.empty) {
-    const batch = writeBatch(database);
-    candidatesData.forEach((c) => {
-      const docRef = doc(candRef);
-      batch.set(docRef, {
+  const demoQuery = query(candRef, where("isDemo", "==", true));
+  const demoCandidates = await getDocs(demoQuery);
+
+  if (demoCandidates.empty) {
+    for (const c of candidatesData) {
+      await addDoc(candRef, {
         ...c,
         createdAt: serverTimestamp(),
       });
-    });
-    await batch.commit();
+    }
     // eslint-disable-next-line no-console
-    console.log("Candidates seeded ✅");
+    console.log("Demo roommate preferences seeded ✅");
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("Demo candidates already exist, skipping seed");
   }
 };
 

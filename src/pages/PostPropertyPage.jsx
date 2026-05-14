@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Navbar from "../components/Navbar";
+import CitySelector from "../components/CitySelector";
 import { useAuth } from "../context/AuthContext";
 import { db, isFirebaseConfigured } from "../firebase/config";
 
@@ -178,18 +179,11 @@ export default function PostPropertyPage() {
 
               <label className="space-y-2">
                 <span className="text-sm font-semibold text-slate-300">Property Type *</span>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-100 outline-none focus:border-amber-500"
-                >
-                  {["PG", "Hostel", "Flat", "Co-living"].map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
               </label>
+                <CitySelector
+                  value={form.city}
+                  onChange={(city) => setForm((prev) => ({ ...prev, city }))}
+                />
 
               <label className="space-y-2">
                 <span className="text-sm font-semibold text-slate-300">City *</span>

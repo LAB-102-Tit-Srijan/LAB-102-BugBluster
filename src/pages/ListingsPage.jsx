@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import Navbar from "../components/Navbar";
 import PropertyCard from "../components/PropertyCard";
+import CitySelector from "../components/CitySelector";
 import { useAuth } from "../context/AuthContext";
 import { db, isFirebaseConfigured } from "../firebase/config";
 
 const amenityOptions = ["WiFi", "AC", "Food", "Parking", "Laundry"];
 const propertyTypes = ["PG", "Hostel", "Flat", "Co-living", "Shared Flat"];
-const cityOptions = ["All Cities", "Bengaluru", "Pune", "Indore"];
 const studentBranchOptions = ["CSE", "ECE", "MBA", "Law", "Medical", "Commerce", "Arts", "Other"];
 const studentExamOptions = ["UPSC", "CAT", "GATE", "JEE", "CA", "NEET"];
 const workStyleOptions = ["WFH", "Office", "Hybrid"];
@@ -156,7 +156,7 @@ export default function ListingsPage() {
         `${property.title} ${property.location} ${property.city} ${property.area}`
           .toLowerCase()
           .includes(searchQuery.toLowerCase());
-      const matchesCity = city === "All Cities" || property.city === city;
+      const matchesCity = city === "All Cities" || (property.city || "").toLowerCase() === city.toLowerCase();
       const matchesBudget = rent <= appliedFilters.budget;
       const matchesGender = appliedFilters.gender === "Any" || property.gender === appliedFilters.gender;
       const matchesAmenities =
@@ -826,17 +826,10 @@ export default function ListingsPage() {
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
                   />
 
-                  <select
+                  <CitySelector
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
-                  >
-                    {cityOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setCity}
+                  />
                 </div>
               </div>
 

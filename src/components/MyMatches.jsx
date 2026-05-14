@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { listenToOwnerRequests, listenToOwnerMatches, updateConnectionStatus } from "../utils/connectionHelpers";
 import { useAuth } from "../context/AuthContext";
 
@@ -151,9 +152,12 @@ function MatchedCard({ match, onRemove }) {
       </div>
 
       <div className="mt-3 flex gap-2">
-        <button className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500">
-          Message
-        </button>
+        <Link
+          to={`/chat/${match.id}`}
+          className="flex-1 rounded-lg bg-amber-500 px-3 py-2 text-center text-sm font-semibold text-black transition hover:bg-amber-400"
+        >
+          💬 Open Chat
+        </Link>
         <button
           onClick={onRemove}
           className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
