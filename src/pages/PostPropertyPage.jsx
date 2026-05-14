@@ -17,7 +17,7 @@ const initialForm = {
   securityDeposit: "",
   amenities: [],
   gender: "Any",
-  targetAudience: "Both",
+  targetAudience: "both",
   availableFrom: "",
   description: "",
   shortTermFriendly: false,
@@ -36,11 +36,11 @@ export default function PostPropertyPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const normalizedRole = String(currentUser?.role || "Student").toLowerCase();
-  const defaultAudience = normalizedRole.includes("professional") ? "Professional" : "Student";
+  const defaultAudience = normalizedRole.includes("professional") ? "professional" : "student";
 
   useEffect(() => {
     setForm((current) => {
-      if (current.targetAudience !== "Both") {
+      if (current.targetAudience !== "both") {
         return current;
       }
 
@@ -115,9 +115,9 @@ export default function PostPropertyPage() {
         zeroDepositAvailable: false,
         halfDepositAvailable: false,
         residentType:
-          form.targetAudience === "Student"
+          form.targetAudience === "student"
             ? ["Students"]
-            : form.targetAudience === "Professional"
+            : form.targetAudience === "professional"
             ? ["Professionals"]
             : ["Students", "Professionals"],
         images: ["https://via.placeholder.com/800x500?text=HabiWise+Property"],
@@ -179,25 +179,25 @@ export default function PostPropertyPage() {
 
               <label className="space-y-2">
                 <span className="text-sm font-semibold text-slate-300">Property Type *</span>
+                <select
+                  value={form.type}
+                  onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-100 outline-none focus:border-amber-500"
+                >
+                  {['PG', 'Hostel', 'Flat', 'Co-living', 'Shared Flat'].map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
               </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-slate-300">City *</span>
                 <CitySelector
                   value={form.city}
                   onChange={(city) => setForm((prev) => ({ ...prev, city }))}
                 />
-
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-slate-300">City *</span>
-                <select
-                  value={form.city}
-                  onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-100 outline-none focus:border-amber-500"
-                >
-                  {["Indore", "Pune", "Bengaluru"].map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
               </label>
 
               <label className="space-y-2 sm:col-span-2">
@@ -298,9 +298,9 @@ export default function PostPropertyPage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, targetAudience: e.target.value }))}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-100 outline-none focus:border-amber-500"
                 >
-                  {["Student", "Professional", "Both"].map((value) => (
+                  {["student", "professional", "both"].map((value) => (
                     <option key={value} value={value}>
-                      {value}
+                      {value === "student" ? "Student" : value === "professional" ? "Professional" : "Both"}
                     </option>
                   ))}
                 </select>

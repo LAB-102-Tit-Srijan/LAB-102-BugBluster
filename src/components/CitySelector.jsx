@@ -1,44 +1,52 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
-const CITY_GROUPS = [
-  {
-    group: "🎓 Student Hubs",
-    cities: [
-      { name: "Indore", desc: "IIT Indore, IIM Indore" },
-      { name: "Pune", desc: "VIT, MIT, Symbiosis" },
-      { name: "Bengaluru", desc: "IISc, Christ, RV College" },
-      { name: "Delhi", desc: "IIT Delhi, JNU, DU" },
-      { name: "Mumbai", desc: "IIT Bombay, NMIMS" },
-      { name: "Hyderabad", desc: "IIT Hyd, BITS Hyderabad" },
-      { name: "Chennai", desc: "IIT Madras, Anna University" },
-      { name: "Kota", desc: "Allen, Resonance" },
-      { name: "Jaipur", desc: "Manipal Jaipur, LNM IIT" },
-      { name: "Bhopal", desc: "IIT Bhopal, NIT Bhopal" },
-      { name: "Nagpur", desc: "VNIT, RCOEM" },
-      { name: "Vellore", desc: "VIT Vellore" },
-      { name: "Manipal", desc: "Manipal University" },
-      { name: "Coimbatore", desc: "PSG Tech, Amrita" },
-      { name: "Dehradun", desc: "UPES, DIT University" },
-    ],
-  },
-  {
-    group: "💼 Professional Hubs",
-    cities: [
-      { name: "Bengaluru", desc: "TCS, Infosys, Google, Amazon" },
-      { name: "Pune", desc: "Infosys, TCS, Capgemini" },
-      { name: "Hyderabad", desc: "Microsoft, Google, Deloitte" },
-      { name: "Chennai", desc: "TCS, Zoho, Freshworks" },
-      { name: "Mumbai", desc: "JP Morgan, Goldman Sachs" },
-      { name: "Gurgaon", desc: "Google, Microsoft, BCG" },
-      { name: "Noida", desc: "HCL, Tech Mahindra, Samsung" },
-      { name: "Delhi", desc: "Deloitte, EY, Accenture" },
-      { name: "Ahmedabad", desc: "Adani, Zydus, TCS" },
-      { name: "Kochi", desc: "TCS, UST Global, Infopark" },
-      { name: "Kolkata", desc: "TCS, Wipro, Cognizant" },
-      { name: "Chandigarh", desc: "Infosys, TCS IT Park" },
-    ],
-  },
+export const CITIES = [
+  "Indore",
+  "Pune",
+  "Bengaluru",
+  "Delhi",
+  "Mumbai",
+  "Hyderabad",
+  "Chennai",
+  "Kota",
+  "Jaipur",
+  "Bhopal",
+  "Nagpur",
+  "Vellore",
+  "Manipal",
+  "Coimbatore",
+  "Dehradun",
+  "Gurgaon",
+  "Noida",
+  "Ahmedabad",
+  "Kochi",
+  "Kolkata",
+  "Chandigarh",
 ];
+
+const CITY_DETAILS = {
+  Indore: "IIT Indore, IIM Indore",
+  Pune: "VIT, MIT, Symbiosis | Infosys, TCS, Capgemini",
+  Bengaluru: "IISc, Christ, RV College | TCS, Infosys, Google, Amazon",
+  Delhi: "IIT Delhi, JNU, DU | Deloitte, EY, Accenture",
+  Mumbai: "IIT Bombay, NMIMS | JP Morgan, Goldman Sachs",
+  Hyderabad: "IIT Hyd, BITS Hyderabad | Microsoft, Google, Deloitte",
+  Chennai: "IIT Madras, Anna University | TCS, Zoho, Freshworks",
+  Kota: "Allen, Resonance",
+  Jaipur: "Manipal Jaipur, LNM IIT",
+  Bhopal: "IIT Bhopal, NIT Bhopal",
+  Nagpur: "VNIT, RCOEM",
+  Vellore: "VIT Vellore",
+  Manipal: "Manipal University",
+  Coimbatore: "PSG Tech, Amrita",
+  Dehradun: "UPES, DIT University",
+  Gurgaon: "Google, Microsoft, BCG",
+  Noida: "HCL, Tech Mahindra, Samsung",
+  Ahmedabad: "Adani, Zydus, TCS",
+  Kochi: "TCS, UST Global, Infopark",
+  Kolkata: "TCS, Wipro, Cognizant",
+  Chandigarh: "Infosys, TCS IT Park",
+};
 
 export default function CitySelector({ value = "All Cities", onChange, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,18 +54,13 @@ export default function CitySelector({ value = "All Cities", onChange, disabled 
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  // Get all unique cities
-  const allCities = [...new Set(CITY_GROUPS.flatMap((g) => g.cities.map((c) => c.name)))].sort();
-
-  // Filter cities based on search
-  const filteredGroups = CITY_GROUPS.map((group) => ({
-    ...group,
-    cities: group.cities.filter(
-      (city) =>
-        city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        city.desc.toLowerCase().includes(searchTerm.toLowerCase())
-    ),
-  })).filter((group) => group.cities.length > 0);
+  const filteredCities = useMemo(() => {
+    const lowerSearch = searchTerm.toLowerCase().trim();
+    return [...CITIES].sort((a, b) => a.localeCompare(b)).filter((city) => {
+      if (!lowerSearch) return true;
+      return city.toLowerCase().includes(lowerSearch) || String(CITY_DETAILS[city] || "").toLowerCase().includes(lowerSearch);
+    });
+  }, [searchTerm]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -121,7 +124,6 @@ export default function CitySelector({ value = "All Cities", onChange, disabled 
             />
           </div>
 
-          {/* "All Cities" Option */}
           <div className="border-b border-slate-700 p-2">
             <button
               type="button"
@@ -136,35 +138,21 @@ export default function CitySelector({ value = "All Cities", onChange, disabled 
             </button>
           </div>
 
-          {/* City Groups */}
           <div className="max-h-72 overflow-y-auto">
-            {filteredGroups.length > 0 ? (
-              filteredGroups.map((group, groupIdx) => (
-                <div key={groupIdx}>
-                  {/* Group Header */}
-                  <div className="border-b border-slate-800 px-4 py-2 pt-3">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-amber-500/80">{group.group}</p>
-                  </div>
-
-                  {/* Group Cities */}
-                  <div className="space-y-1 px-2 py-1">
-                    {group.cities.map((city) => (
-                      <button
-                        key={city.name}
-                        type="button"
-                        onClick={() => handleCitySelect(city.name)}
-                        className={`w-full rounded-lg px-3 py-2 text-left transition-all ${
-                          value === city.name
-                            ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-300"
-                            : "border-l-4 border-transparent text-slate-300 hover:bg-slate-800"
-                        }`}
-                      >
-                        <div className="font-medium">{city.name}</div>
-                        <div className="text-xs text-slate-500">{city.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            {filteredCities.length > 0 ? (
+              filteredCities.map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => handleCitySelect(city)}
+                  className={`w-full rounded-lg px-3 py-2 text-left transition-all ${
+                    value === city
+                      ? "border-l-4 border-amber-500 bg-amber-500/10 text-amber-300"
+                      : "border-l-4 border-transparent text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  <div className="font-medium">{city}</div>
+                </button>
               ))
             ) : (
               <div className="px-4 py-6 text-center text-sm text-slate-500">No cities found</div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PropertyCard from "../components/PropertyCard";
 import CitySelector from "../components/CitySelector";
@@ -91,6 +92,7 @@ const toggleArrayValue = (arr, value) => (arr.includes(value) ? arr.filter((item
 
 export default function ListingsPage() {
   const { currentUser } = useAuth();
+  const location = useLocation();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,6 +100,8 @@ export default function ListingsPage() {
   const [draftFilters, setDraftFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [role, setRole] = useState("student");
+  const [roleLoaded, setRoleLoaded] = useState(false);
 
   const localProfile = useMemo(() => {
     if (typeof window === "undefined") return {};
@@ -110,15 +114,52 @@ export default function ListingsPage() {
   }, [currentUser?.email]);
 
   const normalizedRole = (currentUser?.role || localProfile.role || "Student").toLowerCase();
-  const roleLabel = normalizedRole.includes("professional") ? "Professional" : "Student";
-  const isStudent = roleLabel === "Student";
+  const roleLabel = role === "professional" ? "Professional" : "Student";
+  const isStudent = role !== "professional";
 
   useEffect(() => {
+    const initialCity = location.state?.city;
+    if (initialCity) {
+      setCity(initialCity);
+    }
+  }, [location.state?.city]);
+
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!isFirebaseConfigured || !db || !currentUser?.uid) {
+          const fallbackRole = normalizedRole.includes("professional") ? "professional" : "student";
+        setRole(fallbackRole);
+        setRoleLoaded(true);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const storedRole = String(userDoc.data()?.role || currentUser.role || localProfile.role || "student").toLowerCase();
+        setRole(storedRole.includes("professional") ? "professional" : "student");
+      } catch {
+        setRole(normalizedRole.includes("professional") ? "professional" : "student");
+      } finally {
+        setRoleLoaded(true);
+      }
+    };
+
+    loadRole();
+  }, [currentUser?.uid, currentUser?.role, localProfile.role, normalizedRole]);
+
+  useEffect(() => {
+    if (!roleLoaded) return undefined;
+
     if (!isFirebaseConfigured || !db) {
-      // Demo mode: load from localStorage
       try {
         const demoProperties = JSON.parse(localStorage.getItem("habiwise_demo_properties") || "[]");
-        setProperties(demoProperties);
+        const filteredDemo = demoProperties.filter((property) => {
+          const audience = String(property.targetAudience || "both").toLowerCase();
+          const matchesAudience = audience === role || audience === "both";
+          const matchesCity = city === "All Cities" || String(property.city || "").toLowerCase() === city.toLowerCase();
+          return matchesAudience && matchesCity;
+        });
+        setProperties(filteredDemo);
       } catch {
         setProperties([]);
       }
@@ -126,9 +167,22 @@ export default function ListingsPage() {
       return undefined;
     }
 
-    const propertiesQuery = query(collection(db, "properties"), orderBy("createdAt", "desc"));
+    const cityFilter = city && city !== "All Cities" ? String(city).trim() : "";
+    const baseQuery = cityFilter
+      ? query(
+          collection(db, "properties"),
+          where("city", "==", cityFilter),
+          where("targetAudience", "in", [role, "both"]),
+          orderBy("createdAt", "desc")
+        )
+      : query(
+          collection(db, "properties"),
+          where("targetAudience", "in", [role, "both"]),
+          orderBy("createdAt", "desc")
+        );
+
     const unsub = onSnapshot(
-      propertiesQuery,
+      baseQuery,
       (snapshot) => {
         const data = snapshot.docs.map((docSnapshot) => ({
           id: docSnapshot.id,
@@ -144,7 +198,7 @@ export default function ListingsPage() {
     );
 
     return () => unsub();
-  }, []);
+  }, [city, currentUser?.uid, isFirebaseConfigured, localProfile.role, normalizedRole, role, roleLoaded]);
 
   const filteredProperties = useMemo(() => {
     const result = properties.filter((property) => {
@@ -243,6 +297,12 @@ export default function ListingsPage() {
 
     return sorted;
   }, [appliedFilters, city, isStudent, properties, searchQuery]);
+
+  const roleCityLabel = city === "All Cities" ? `All ${roleLabel.toLowerCase()} stays` : `${roleLabel} stays in ${city}`;
+  const resultCountLabel = `Showing ${filteredProperties.length} properties for you`;
+  const emptyStateLabel = city === "All Cities"
+    ? `No properties found for ${roleLabel.toLowerCase()} stays yet. Try back soon!`
+    : `No properties found in ${city} yet. Try a nearby city or check back soon!`;
 
   const toggleAmenity = (amenity) => {
     setDraftFilters((current) => ({
@@ -817,6 +877,13 @@ export default function ListingsPage() {
 
             <section className="space-y-6">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl shadow-black/20">
+                <div className="mb-4 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-sm font-semibold text-amber-200">
+                    {isStudent ? "🎓" : "💼"} {roleCityLabel}
+                  </span>
+                  <span className="text-sm text-slate-400">{resultCountLabel}</span>
+                </div>
+
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px]">
                   <input
                     type="text"
@@ -826,10 +893,7 @@ export default function ListingsPage() {
                     className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
                   />
 
-                  <CitySelector
-                    value={city}
-                    onChange={setCity}
-                  />
+                  <CitySelector value={city} onChange={setCity} />
                 </div>
               </div>
 
@@ -852,7 +916,14 @@ export default function ListingsPage() {
                 </div>
               ) : filteredProperties.length === 0 ? (
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400 shadow-2xl shadow-black/20">
-                  No properties match your current filters.
+                  <p>{emptyStateLabel}</p>
+                  <button
+                    type="button"
+                    onClick={() => setCity("All Cities")}
+                    className="mt-4 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-400"
+                  >
+                    Change City
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">

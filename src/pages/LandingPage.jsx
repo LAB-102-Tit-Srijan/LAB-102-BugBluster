@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import CitySelector from "../components/CitySelector";
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState("All Cities");
+  const navigate = useNavigate();
 
   const handleMobileNavClick = () => {
     setMobileMenuOpen(false);
@@ -87,13 +90,13 @@ export default function LandingPage() {
               Discover verified homes, match with compatible roommates, and manage living costs in one place.
             </p>
 
-            <div className="mt-8 flex w-full max-w-2xl items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2 shadow-lg shadow-black/20">
-              <input
-                type="text"
-                placeholder="Search by city, area, or college"
-                className="w-full rounded-lg bg-transparent px-4 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-500"
-              />
-              <button className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500">
+            <div className="mt-8 grid w-full max-w-2xl gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2 shadow-lg shadow-black/20 sm:grid-cols-[1fr_auto]">
+              <CitySelector value={selectedCity} onChange={setSelectedCity} />
+              <button
+                type="button"
+                onClick={() => navigate("/listings", { state: { city: selectedCity } })}
+                className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500"
+              >
                 Search
               </button>
             </div>

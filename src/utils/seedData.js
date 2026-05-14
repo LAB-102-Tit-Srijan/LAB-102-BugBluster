@@ -335,14 +335,14 @@ const normalizeTargetAudience = (value) => {
   const normalized = String(value || "Both").trim().toLowerCase();
 
   if (normalized.includes("student")) {
-    return "Student";
+    return "student";
   }
 
   if (normalized.includes("professional")) {
-    return "Professional";
+    return "professional";
   }
 
-  return "Both";
+  return "both";
 };
 
 const normalizePropertySeed = (property, index) => {

@@ -4,6 +4,13 @@ export default function PropertyCard({ property, theme = "dark", communityBadge 
   const dark = theme === "dark";
   const cardClassName = "group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl shadow-black/20 transition hover:-translate-y-1 hover:border-indigo-500/40";
   const rent = property.rent ?? property.price ?? 0;
+  const audience = String(property.targetAudience || "both").toLowerCase();
+  const audienceBadge =
+    audience === "student"
+      ? { text: "🎓 Student Friendly", className: "border-amber-400/40 bg-amber-500/15 text-amber-200" }
+      : audience === "professional"
+        ? { text: "💼 Professional Friendly", className: "border-sky-400/40 bg-sky-500/15 text-sky-200" }
+        : { text: "👥 All Welcome", className: "border-emerald-400/40 bg-emerald-500/15 text-emerald-200" };
   const depositBadge = property.zeroDepositAvailable
     ? { text: "⚡ Zero Deposit — Elite members", className: "border-amber-400/40 bg-amber-500/20 text-amber-200" }
     : property.halfDepositAvailable
@@ -75,6 +82,12 @@ export default function PropertyCard({ property, theme = "dark", communityBadge 
           <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1">{property.type}</span>
           <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1">{property.gender}</span>
           <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1">{property.city}</span>
+        </div>
+
+        <div>
+          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${audienceBadge.className}`}>
+            {audienceBadge.text}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

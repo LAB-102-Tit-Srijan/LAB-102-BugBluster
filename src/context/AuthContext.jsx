@@ -13,7 +13,7 @@ import { auth, db, firebaseSetupMessage, isFirebaseConfigured } from "../firebas
 import { calculateTrustScore } from "../utils/trustScore";
 
 // Firestore collections schema:
-// users: { id, name, email, gender, role, college, company, budget, area }
+// users: { id, name, email, gender, role, college, company, budget, area, city }
 // properties: { title, location, rent, amenities[], images[], ownerName, occupancy, gender, rating }
 // roommate_preferences: { userId, sleepSchedule, cleanliness, budget, smokingDrinking, foodPreference, socialHabits }
 // expenses: { amount, type, paidBy, splitMembers[], date, settled }
@@ -48,6 +48,7 @@ const buildUserProfile = (user, profileData = {}) => {
     company: normalizedProfile.company || "",
     budget: normalizedProfile.budget || "",
     area: normalizedProfile.area || "",
+    city: normalizedProfile.city || "",
     profileComplete:
       normalizedProfile.profileComplete ??
       Boolean(normalizedProfile.name && (normalizedProfile.college || normalizedProfile.company || role)),
@@ -151,6 +152,7 @@ export function AuthProvider({ children }) {
         company: existingUser.company || "",
         budget: existingUser.budget || "",
         area: existingUser.area || "",
+        city: existingUser.city || "",
         profileComplete: existingUser.profileComplete ?? false,
         emailVerified: existingUser.emailVerified ?? false,
         aadhaarUploaded: existingUser.aadhaarUploaded ?? false,
@@ -190,6 +192,7 @@ export function AuthProvider({ children }) {
         company: normalizedProfile.company || "",
         budget: normalizedProfile.budget || "",
         area: normalizedProfile.area || "",
+        city: normalizedProfile.city || "",
         profileComplete: normalizedProfile.profileComplete ?? false,
         emailVerified: normalizedProfile.emailVerified ?? false,
         aadhaarUploaded: normalizedProfile.aadhaarUploaded ?? false,
@@ -210,6 +213,7 @@ export function AuthProvider({ children }) {
         company: demoUser.company,
         budget: demoUser.budget,
         area: demoUser.area,
+        city: demoUser.city,
         profileComplete: demoUser.profileComplete,
         emailVerified: demoUser.emailVerified,
         aadhaarUploaded: demoUser.aadhaarUploaded,

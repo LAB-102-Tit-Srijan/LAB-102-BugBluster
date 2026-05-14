@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import CitySelector from "../components/CitySelector";
 import { useAuth } from "../context/AuthContext";
 
 export default function SignupPage() {
@@ -10,6 +11,7 @@ export default function SignupPage() {
     role: "Student",
     college: "",
     company: "",
+    city: "All Cities",
     email: "",
     password: "",
     confirmPassword: "",
@@ -49,6 +51,7 @@ export default function SignupPage() {
         role: formData.role,
         college: formData.role === "Student" ? formData.college : "",
         company: formData.role === "Professional Worker" ? formData.company : "",
+        city: formData.city === "All Cities" ? "" : formData.city,
       });
       navigate("/dashboard");
     } catch (err) {
@@ -133,6 +136,11 @@ export default function SignupPage() {
               />
             </div>
           )}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-300">Preferred City</label>
+            <CitySelector value={formData.city} onChange={(city) => setFormData((prev) => ({ ...prev, city }))} />
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-300">Email</label>
