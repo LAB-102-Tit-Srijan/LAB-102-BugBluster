@@ -24,20 +24,33 @@ const googleProvider = new GoogleAuthProvider();
 const DEMO_USER_KEY = "habiwise_demo_user";
 const DEMO_USERS_KEY = "habiwise_demo_users";
 
+const normalizeRole = (role) => {
+  const value = String(role || "Student").trim().toLowerCase();
+
+  if (value.includes("professional")) {
+    return "Professional Worker";
+  }
+
+  return "Student";
+};
+
 const buildUserProfile = (user, profileData = {}) => {
   const normalizedProfile = typeof profileData === "string" ? { name: profileData } : profileData;
+  const role = normalizeRole(normalizedProfile.role);
 
   return {
     id: user.uid,
     name: normalizedProfile.name || user.displayName || "",
     email: user.email || normalizedProfile.email || "",
     gender: normalizedProfile.gender || "",
-    role: normalizedProfile.role || "",
+    role,
     college: normalizedProfile.college || "",
     company: normalizedProfile.company || "",
     budget: normalizedProfile.budget || "",
     area: normalizedProfile.area || "",
-    profileComplete: normalizedProfile.profileComplete ?? Boolean(normalizedProfile.name && (normalizedProfile.college || normalizedProfile.company)),
+    profileComplete:
+      normalizedProfile.profileComplete ??
+      Boolean(normalizedProfile.name && (normalizedProfile.college || normalizedProfile.company || role)),
     emailVerified: normalizedProfile.emailVerified ?? user.emailVerified ?? false,
     aadhaarUploaded: normalizedProfile.aadhaarUploaded ?? false,
     idUploaded: normalizedProfile.idUploaded ?? false,
@@ -133,7 +146,7 @@ export function AuthProvider({ children }) {
         uid: existingUser.id,
         email: existingUser.email,
         displayName: existingUser.name,
-        role: existingUser.role || "",
+        role: normalizeRole(existingUser.role),
         college: existingUser.college || "",
         company: existingUser.company || "",
         budget: existingUser.budget || "",
@@ -172,7 +185,7 @@ export function AuthProvider({ children }) {
         email,
         password,
         gender: normalizedProfile.gender || "",
-        role: normalizedProfile.role || "",
+        role: normalizeRole(normalizedProfile.role),
         college: normalizedProfile.college || "",
         company: normalizedProfile.company || "",
         budget: normalizedProfile.budget || "",
@@ -192,7 +205,7 @@ export function AuthProvider({ children }) {
         uid: demoUser.id,
         email: demoUser.email,
         displayName: demoUser.name,
-        role: demoUser.role,
+        role: normalizeRole(demoUser.role),
         college: demoUser.college,
         company: demoUser.company,
         budget: demoUser.budget,

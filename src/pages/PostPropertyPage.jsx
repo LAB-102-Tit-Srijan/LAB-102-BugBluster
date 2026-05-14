@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Navbar from "../components/Navbar";
@@ -34,6 +34,18 @@ export default function PostPropertyPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const normalizedRole = String(currentUser?.role || "Student").toLowerCase();
+  const defaultAudience = normalizedRole.includes("professional") ? "Professional" : "Student";
+
+  useEffect(() => {
+    setForm((current) => {
+      if (current.targetAudience !== "Both") {
+        return current;
+      }
+
+      return { ...current, targetAudience: defaultAudience };
+    });
+  }, [defaultAudience]);
 
   const validateForm = () => {
     const nextErrors = {};

@@ -70,8 +70,8 @@ export default function DashboardPage() {
 
   const userName = currentUser?.displayName || localProfile.name || currentUser?.email?.split("@")[0] || "User";
   const normalizedRole = (currentUser?.role || localProfile.role || "Student").toLowerCase();
-  const roleLabel = normalizedRole.includes("professional") ? "Professional" : "Student";
-  const isProfessional = roleLabel === "Professional";
+  const isProfessional = normalizedRole.includes("professional");
+  const roleLabel = isProfessional ? "Professional Worker" : "Student";
   const trustSource = { ...localProfile, ...currentUser };
   const trustScore = currentUser?.trustScore ?? calculateTrustScore(trustSource);
   const trustTier = getTrustTier(trustScore);
@@ -145,6 +145,21 @@ export default function DashboardPage() {
   };
 
   const roleSectionItems = isProfessional ? professionalStays : studentColleges;
+  const roleHeroTitle = isProfessional ? "Office-first housing and roommate matching" : "Campus-first housing and roommate matching";
+  const roleHeroDescription = isProfessional
+    ? "Browse commute-friendly stays, match with working flatmates, and post spaces for professionals who want the same routine."
+    : "Browse student-friendly stays, find roommates by college and exam goals, and post spaces that fit campus life.";
+  const roleHighlights = isProfessional
+    ? [
+        { label: "Best for", value: "Commute + WFH" },
+        { label: "Find roommates", value: "By office area" },
+        { label: "Post listings", value: "Professional Worker" },
+      ]
+    : [
+        { label: "Best for", value: "College + exam prep" },
+        { label: "Find roommates", value: "By college / branch" },
+        { label: "Post listings", value: "Student / Both" },
+      ];
 
   return (
     <div className="min-h-screen bg-[#0D1117] text-slate-100">
@@ -231,7 +246,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Workspace overview</p>
                   <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-[2.65rem]">Welcome back, {userName}</h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Track matches, trust progress, and your daily housing workflow from one place.</p>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">{roleHeroDescription}</p>
                 </div>
                 <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[360px]">
                   {quickActions.slice(0, 2).map((action) => (
@@ -244,6 +259,31 @@ export default function DashboardPage() {
                       <p className="mt-1 text-xs text-slate-400">{action.hint}</p>
                     </Link>
                   ))}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {roleHighlights.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
+                    <p className="mt-2 text-sm font-semibold text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950 p-4 sm:p-5">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-amber-300/80">{roleLabel}</p>
+                    <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">{roleHeroTitle}</h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">You can keep the same dashboard, but the roommate and property suggestions will skew to your account type.</p>
+                  </div>
+                  <Link
+                    to="/roommate-match"
+                    className="inline-flex rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-400"
+                  >
+                    Find Roommates
+                  </Link>
                 </div>
               </div>
 

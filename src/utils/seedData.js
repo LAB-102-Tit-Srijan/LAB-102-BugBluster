@@ -321,8 +321,85 @@ const candidatesData = [
   },
 ];
 
+const normalizeTargetAudience = (value) => {
+  const normalized = String(value || "Both").trim().toLowerCase();
+
+  if (normalized.includes("student")) {
+    return "Student";
+  }
+
+  if (normalized.includes("professional")) {
+    return "Professional";
+  }
+
+  return "Both";
+};
+
+const normalizePropertySeed = (property, index) => {
+  const title = property.title || property.name || `Demo Property ${index + 1}`;
+  const area = property.area || "Central Area";
+  const city = property.city || "Indore";
+  const rent = Number(property.rent || 0);
+  const securityDeposit = Number(property.securityDeposit ?? property.deposit ?? 0);
+
+  return {
+    id: property.id || `demo-property-${index + 1}`,
+    title,
+    type: property.type || "PG",
+    city,
+    area,
+    location: property.location || `${area}, ${city}`,
+    rent,
+    securityDeposit,
+    amenities: property.amenities || [],
+    gender: property.gender || "Any",
+    targetAudience: normalizeTargetAudience(property.targetAudience),
+    availableFrom: property.availableFrom || "2026-05-15",
+    description: property.description || "Demo stay listed to help you start matching quickly.",
+    shortTermFriendly: property.shortTermFriendly ?? false,
+    residentType: property.residentType || [],
+    ownerName: property.ownerName || "HabiWise Demo Host",
+    ownerPhone: property.ownerPhone || "+91 99999 10001",
+    occupancy: property.occupancy || "Shared",
+    roomTypes:
+      property.roomTypes || [
+        { type: "Shared", price: rent || 0, bedCount: 2 },
+      ],
+    nearby: property.nearby || [],
+    commuteHours: property.commuteHours || "Saves commute time",
+    zeroDepositAvailable: property.zeroDepositAvailable ?? false,
+    halfDepositAvailable: property.halfDepositAvailable ?? false,
+    verified: property.verified ?? true,
+    safetyScore: property.safetyScore ?? 8.5,
+    scamRisk: property.scamRisk ?? "Low",
+    rating: property.rating ?? 4.2,
+    images:
+      property.images || ["https://via.placeholder.com/800x500?text=HabiWise+Demo+Stay"],
+    createdAt: property.createdAt || new Date().toISOString(),
+    ownerId: property.ownerId || "seed-admin",
+  };
+};
+
+const normalizedPropertiesData = propertiesData.map((property, index) => normalizePropertySeed(property, index));
+
+const seedLocalDemoProperties = () => {
+  try {
+    const existingProperties = JSON.parse(localStorage.getItem("habiwise_demo_properties") || "[]");
+    if (existingProperties.length > 0) {
+      return;
+    }
+
+    localStorage.setItem("habiwise_demo_properties", JSON.stringify(normalizedPropertiesData));
+  } catch {
+    // Ignore localStorage failures and let the UI fall back to empty state.
+  }
+};
+
 export const seedDemoData = async (dbParam) => {
   const database = dbParam || db;
+
+  seedLocalDemoProperties();
+
   if (!isFirebaseConfigured || !database) return;
 
   // Properties
@@ -330,7 +407,7 @@ export const seedDemoData = async (dbParam) => {
   const existingProps = await getDocs(query(propertiesRef, limit(1)));
   if (existingProps.empty) {
     const batch = writeBatch(database);
-    propertiesData.forEach((p) => {
+    normalizedPropertiesData.forEach((p) => {
       const docRef = doc(propertiesRef);
       batch.set(docRef, {
         ...p,

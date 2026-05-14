@@ -7,6 +7,9 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     displayName: "",
+    role: "Student",
+    college: "",
+    company: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -28,10 +31,25 @@ export default function SignupPage() {
       return;
     }
 
+    if (formData.role === "Student" && !formData.college.trim()) {
+      setError("Please enter your college or university.");
+      return;
+    }
+
+    if (formData.role === "Professional Worker" && !formData.company.trim()) {
+      setError("Please enter your company or workplace.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signup(formData.email, formData.password, { name: formData.displayName });
+      await signup(formData.email, formData.password, {
+        name: formData.displayName,
+        role: formData.role,
+        college: formData.role === "Student" ? formData.college : "",
+        company: formData.role === "Professional Worker" ? formData.company : "",
+      });
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
@@ -74,6 +92,47 @@ export default function SignupPage() {
               placeholder="John Doe"
             />
           </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-300">Account Type</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+            >
+              <option value="Student">Student</option>
+              <option value="Professional Worker">Professional Worker</option>
+            </select>
+          </div>
+
+          {formData.role === "Student" ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-300">College / University</label>
+              <input
+                type="text"
+                name="college"
+                value={formData.college}
+                onChange={handleChange}
+                required
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                placeholder="St. Xavier's College"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-300">Company / Workplace</label>
+              <input
+                type="text"
+                name="company"
+                value={formData.company}
+                onChange={handleChange}
+                required
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
+                placeholder="Infosys, TCS, Startup, or Office"
+              />
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-300">Email</label>
